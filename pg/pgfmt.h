@@ -66,17 +66,20 @@ template <typename _Type, typename _Iter = detail::void_t<>>
 struct has_iterator : public std::false_type { };
 
 template <typename _Type>
-struct has_iterator<_Type, detail::void_t<typename _Type::iterator>> : public std::true_type { };
+struct has_iterator<_Type, detail::void_t<typename _Type::iterator>>
+  : public std::true_type { };
 
 // function-delarations
 template <typename _First, typename _Second>
 std::string transToString(const std::pair<_First, _Second> & ele, const std::string &);
 
 template<typename _Type>
-detail::enable_if_t<has_iterator<_Type>::value, std::string> transToString(const _Type& ele, const std::string & limit);
+detail::enable_if_t<has_iterator<_Type>::value, std::string>
+  transToString(const _Type& ele, const std::string & limit);
 
 template<typename _Type>
-detail::enable_if_t<!has_iterator<_Type>::value, std::string> transToString(const _Type& ele, const std::string &);
+detail::enable_if_t<!has_iterator<_Type>::value, std::string>
+  transToString(const _Type& ele, const std::string &);
 
 // function-definitions
 inline std::string transToString(const bool & ele, const std::string &) {
@@ -205,7 +208,8 @@ std::string transToString(const std::pair<_First, _Second> & ele, const std::str
 
 // string, const char*
 template<typename _Type>
-detail::enable_if_t<has_iterator<_Type>::value, std::string> transToString(const _Type& ele, const std::string & limit) {
+detail::enable_if_t<has_iterator<_Type>::value, std::string> transToString(
+  const _Type& ele, const std::string & limit) {
     typedef typename _Type::const_iterator Iter;
     
     const std::string NULL_STRING;
@@ -284,32 +288,29 @@ inline void parseArgsImpl(
     ) { }
 
 inline std::vector<std::pair<std::string::const_iterator, std::string::const_iterator>> 
-    parseBracket(
-        const std::string & str, const char * leftBracket, const char * rightBracket) {
-        
-        std::vector<std::pair<std::string::const_iterator, std::string::const_iterator>> res;
+  parseBracket(const std::string & str, const char * leftBracket, const char * rightBracket) {
+    std::vector<std::pair<std::string::const_iterator, std::string::const_iterator>> res;
 
-        size_t pos = 0, npos = std::string::npos;
-        std::string::const_iterator begin = str.begin();
-        while (true) {
-            size_t beginPos = str.find(leftBracket, pos);
-            if (beginPos == npos) break;
-            size_t endPos = str.find(rightBracket, beginPos);
-            if (endPos == npos) break;
-            res.push_back({begin + beginPos + 1, begin + endPos});
-            pos = endPos;
-        }
-        return res;
-
+    size_t pos = 0, npos = std::string::npos;
+    std::string::const_iterator begin = str.begin();
+    while (true) {
+        size_t beginPos = str.find(leftBracket, pos);
+        if (beginPos == npos) break;
+        size_t endPos = str.find(rightBracket, beginPos);
+        if (endPos == npos) break;
+        res.push_back({begin + beginPos + 1, begin + endPos});
+        pos = endPos;
     }
+    return res;
+}
 
 template <typename Result>
 void pushStringIntoBracket(
-    Result & res,
-    const std::string & fmt,
-    const std::vector<std::string> & contents,
-    const std::vector<std::pair<std::string::const_iterator, std::string::const_iterator>> & ranges,
-    const std::vector<int> & nos) {
+  Result & res,
+  const std::string & fmt,
+  const std::vector<std::string> & contents,
+  const std::vector<std::pair<std::string::const_iterator, std::string::const_iterator>> & ranges,
+  const std::vector<int> & nos) {
     res.append(fmt.begin(), ranges.front().first - 1);
     ssize_t cSize = contents.size();
     ssize_t idx = 0;
@@ -348,7 +349,8 @@ std::string format(const std::string & fmt, Args&& ...args) {
     
     std::vector<std::string> contents =  detail::parseArgs(limits, args...);
 
-    std::string res; res.append(fmt.begin(), contentRangeInBracket.front().first - 1);
+    std::string res;
+    res.append(fmt.begin(), contentRangeInBracket.front().first - 1);
     ssize_t cSize = contents.size();
     ssize_t idx = 0;
     for (ssize_t i = 0; i < static_cast<ssize_t>(nos.size()) - 1; ++i) {
@@ -393,8 +395,10 @@ void formatAppend(_Res & res, const std::string & fmt, _Args&& ...args) {
 } // namespace pg
 
 namespace pgfmt {
-    using ::pg::fmt::format;
-    using ::pg::fmt::formatAppend;
+
+using ::pg::fmt::format;
+using ::pg::fmt::formatAppend;
+
 } // namespace pgfmt
 
 #endif // !PGZXB_PGFMT_H
