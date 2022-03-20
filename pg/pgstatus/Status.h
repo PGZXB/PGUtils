@@ -40,24 +40,9 @@ public:
     static constexpr std::uint64_t kMaxValidStatusCode = kUnkown - 1;
     static constexpr std::uint64_t kMaxBits            = 3 * 8;
 
-    explicit Status(StatusManger *mgr)
-      : context_flags_(0),
-        internal_data_flags_(kUseInternalMgr),
-        code_(kOk),
-        mgr_(mgr) {
-    }
-
-    explicit Status(StatusInternalErrCallback *callback)
-      : context_flags_(0),
-        internal_data_flags_(kUseInternalCallback),
-        code_(kOk),
-        callback_(callback) {
-    }
-
-    ~Status() {
-        if (context_flags_ == kUseMallocContext)
-            std::free(context_);
-    }
+    explicit Status(StatusManger *mgr);
+    explicit Status(StatusInternalErrCallback *callback);
+    ~Status();
 
     Status(const Status &) = default;
     Status(Status &&) = default;
@@ -99,26 +84,14 @@ public:
         return this->invoke();
     }
 
-    StatusInternalErrCallback *set_callback(StatusInternalErrCallback *callback) {
-        StatusInternalErrCallback *old_callback = internal_data_flags_ == kUseInternalCallback ? callback_ : nullptr;
-        internal_data_flags_ = kUseInternalCallback;
-        callback_ = callback;
-        return old_callback;
-    }
+    StatusInternalErrCallback *set_callback(StatusInternalErrCallback *callback);
 
     void set_manager(StatusManger *mgr) {
         internal_data_flags_ = kUseInternalMgr;
         mgr_ = mgr;
     }
 
-    std::string invoke() {
-        if (internal_data_flags_ == kUseInternalCallback && !is_ok()) {
-            PGZXB_DEBUG_ASSERT(!!callback_);
-            return callback_(*this);
-        }
-        /* return mgr_->process_status(*this); */
-        return "";
-    }
+    std::string invoke();
 
     template <typename T, typename ...Args>
     void set_context(Args &&...args) {
