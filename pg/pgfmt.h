@@ -173,7 +173,7 @@ inline std::string transToString(const std::string & ele, const std::string & li
         char * ptr = nullptr;
     };
 
-    HeapCharArrayWrapper buf(new char[ele.size() << 1]);
+    HeapCharArrayWrapper buf(new char[1 + (ele.size() << 1)]);
     char fmt[50] = { 0 };
 
     sprintf(fmt, "%%%ss", limit.c_str());
