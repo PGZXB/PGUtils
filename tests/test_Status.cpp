@@ -26,7 +26,7 @@ static std::string process_err(pg::status::Status &s) {
     } else if (s == E(kErrInsertRepeatly)) {
         return pgfmt::format("Insert {0} repeatly", s.get_context<std::string>());
     }
-    return "<default-err-string>" + std::to_string(s.get_context<std::uint64_t>());
+    return "<default-err-string>" + std::to_string(s.get_context<int>());
 }
 
 static std::string process_err_2(pg::status::Status &) {

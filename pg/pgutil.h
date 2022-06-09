@@ -1,12 +1,14 @@
 #ifndef PGZXB_PGUTILS_H
 #define PGZXB_PGUTILS_H
 
-#include <cstddef>
+#include <cstring>
 #include <cstdlib>
 #include <cstdint>
 #include <limits>
 #include <cerrno>
 #include <utility>
+#include <functional>
+#include <unordered_map>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -168,10 +170,39 @@ private:
 };
 #endif
 
+struct ParseCmdConfig {
+    using ParseCmdCallback = std::function<bool(const char* str)>;
+    enum {
+        OPTION,
+        PARAM,
+    } type;
+    ParseCmdCallback callbcak;
+};
+
+inline void parseCmdSimply(int argc, char* argv[], const std::unordered_map<char, ParseCmdConfig>& cmdConfig) {
+    // FIXME: Unsafe
+    for (int i = 1; i < argc; ++i) {
+        const char* str = argv[i];
+        const std::size_t slen = std::strlen(str);
+        if (slen >= 2 && str[0] == '-') {
+            auto iter = cmdConfig.find(str[1]);
+            if (iter != cmdConfig.end() && !!(iter->second.callbcak)) {
+                if (!iter->second.callbcak((
+                    iter->second.type == ParseCmdConfig::PARAM && i + 1 < argc) ? argv[++i] : nullptr
+                )) exit(0);
+            } /* else {
+              // ignore
+            } */
+        }
+    }
+}
+
 } // namespace util
 } // namespace pg
 
 namespace pgutils {
+
+using pg::util::ParseCmdConfig;
 
 using pg::util::cStrToU32;
 using pg::util::cStrToU64;
@@ -180,6 +211,7 @@ using pg::util::clz;
 using pg::util::ctz;
 using pg::util::popcnt;
 using pg::util::visitParamPackage;
+using pg::util::parseCmdSimply;
 
 } // namespace pgutils
 
