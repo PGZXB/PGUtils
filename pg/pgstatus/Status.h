@@ -97,19 +97,20 @@ public:
     void set_context(Args &&...args) {
         if (context_flags_ == kUseMallocContext)
             std::free(context_);
-        if
+        
 #if __cplusplus >= 201703L
-        constexpr
-#endif
-        (sizeof(T) < sizeof(context_)) {
+        if constexpr (sizeof(T) < sizeof(context_)) {
             *(std::uintptr_t*)&context_ = 0;
-            new (&context_) T(std::forward<Args>(args)...);
+            new ((T*)(&context_)) T(std::forward<Args>(args)...);
             context_flags_ = 0;
         } else {
-            context_ = std::malloc(sizeof(T));
-            new (context_) T(std::forward<Args>(args)...);
-            context_flags_ = kUseMallocContext;
+#endif
+        context_ = std::malloc(sizeof(T));
+        new (context_) T(std::forward<Args>(args)...);
+        context_flags_ = kUseMallocContext;
+#if __cplusplus >= 201703L
         }
+#endif
     }
 
     template <typename T>
