@@ -148,17 +148,17 @@ public:
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
 
     template<typename T>
-    static constexpr const std::size_t index() {
+    static constexpr std::size_t index() {
         return indexImpl<T, Base>();
     }
 
-    static constexpr const std::size_t size() {
+    static constexpr std::size_t size() {
         return sizeof...(TYPES);
     }
 
 private:
     template<typename T, typename TAB>
-    static constexpr const std::size_t indexImpl() {
+    static constexpr std::size_t indexImpl() {
         if constexpr (std::is_same_v<TAB, detail::TypeArrayBaseInvalidType>)
             return npos;
 
