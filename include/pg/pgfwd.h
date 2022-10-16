@@ -14,8 +14,6 @@
 #include <intrin.h>
 #endif
 
-#define PGZXB_ROOT_NAMESPACE_START namespace pg {
-#define PGZXB_ROOT_NAMESPACE_END }
 #define PGZXB_PASS (void(0))
 #define PGZXB_UNUSED(val) (void(val))
 #define PGZXB_PGFWD_MIN_CPP_VERSION 201103L
@@ -78,23 +76,4 @@
     #define PGZXB_DEBUG_CallFunc(func) PGZXB_UNUSED(func)
 #endif
 
-PGZXB_ROOT_NAMESPACE_START
-
-using SizeType = std::uint64_t;
-using Enum = std::uint32_t;
-using Byte = std::uint8_t;
-using String = std::string;
-
-#define PRI_ENUM PRIu32
-
-constexpr SizeType DEFAULT_BUFFER_SIZE = 512;
-
-#if __cplusplus >= 201703L
-    #include <string_view>
-    using StringArg = std::string_view;
-#else
-    using StringArg = std::string;  // FIXME: replace with PGBase pg::base::StringArg
-#endif
-
-PGZXB_ROOT_NAMESPACE_END
 #endif // PGZXB_PGFWD_H

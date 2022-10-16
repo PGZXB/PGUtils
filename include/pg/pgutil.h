@@ -1,20 +1,20 @@
 #ifndef PGZXB_PGUTILS_H
 #define PGZXB_PGUTILS_H
 
+#include <cerrno>
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
 #include <limits>
-#include <cerrno>
+#include <vector>
 #include <utility>
 #include <functional>
-#include <unordered_map>
 
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
 
-namespace pg {
+namespace pgimpl {
 namespace util {
 
 #if defined(__GNUC__)
@@ -91,8 +91,6 @@ inline std::uint32_t cStrToU32(const char *str, char **str_end, int radix) {
     return static_cast<std::uint32_t>(result);
 }
 
-namespace detail {
-
 template <typename VISITOR> // VISITOR : void(SizeType, ARG);
 inline void visitParamPackageHelper(VISITOR visitor, std::size_t index) { }
 
@@ -102,16 +100,12 @@ inline void visitParamPackageHelper(VISITOR visitor, std::size_t index, ARG &&ar
     visitParamPackageHelper(visitor, index + 1, std::forward<ARGS>(args)...);
 }
 
-}
-
 template <typename VISITOR, typename ... ARGS>
 inline void visitParamPackage(VISITOR visitor, ARGS &&...args) {
-    detail::visitParamPackageHelper(visitor, 0, std::forward<ARGS>(args)...);
+    visitParamPackageHelper(visitor, 0, std::forward<ARGS>(args)...);
 }
 
 #if __cplusplus >= 201703L
-namespace detail {
-
 struct TypeArrayInvalidDataType { };
 
 struct TypeArrayBaseInvalidType {
@@ -137,12 +131,10 @@ struct TypeArrayBase<FINDEX, TypeArrayInvalidDataType> {
     static constexpr std::size_t INDEX = FINDEX;
 };
 
-}
-
 template<typename ... TYPES>
 class TypeArray {
 private:
-    using Base = detail::TypeArrayBase<0, TYPES..., detail::TypeArrayInvalidDataType>;
+    using Base = TypeArrayBase<0, TYPES..., TypeArrayInvalidDataType>;
     
 public:
     static constexpr std::size_t npos = static_cast<std::size_t>(-1);
@@ -159,7 +151,7 @@ public:
 private:
     template<typename T, typename TAB>
     static constexpr std::size_t indexImpl() {
-        if constexpr (std::is_same_v<TAB, detail::TypeArrayBaseInvalidType>)
+        if constexpr (std::is_same_v<TAB, TypeArrayBaseInvalidType>)
             return npos;
 
         if constexpr (std::is_same_v<T, typename TAB::Front>)
@@ -175,12 +167,14 @@ struct ParseCmdConfig {
     enum {
         OPTION,
         PARAM,
-    } type;
-    ParseCmdCallback callbcak;
+    } type; // must be 1st
+    ParseCmdCallback callbcak; // must be 2nd
 };
 
-inline void parseCmdSimply(int argc, char* argv[], const std::unordered_map<char, ParseCmdConfig>& cmdConfig) {
+template <typename Map>
+inline std::vector<const char *> parseCmdSimply(int argc, char* argv[], const Map& cmdConfig) {
     // FIXME: Unsafe
+    std::vector<const char *> ext;
     for (int i = 1; i < argc; ++i) {
         const char* str = argv[i];
         const std::size_t slen = std::strlen(str);
@@ -193,26 +187,29 @@ inline void parseCmdSimply(int argc, char* argv[], const std::unordered_map<char
             } /* else {
               // ignore
             } */
+        } else {
+            ext.push_back(str);
         }
     }
+    return ext;
 }
 
-} // namespace util
-} // namespace pg
+}  // namespace util
+}  // namespace pgimpl
 
-namespace pgutils {
+namespace pgutil {
 
-using pg::util::ParseCmdConfig;
+using pgimpl::util::ParseCmdConfig;
 
-using pg::util::cStrToU32;
-using pg::util::cStrToU64;
-using pg::util::ceilDivide;
-using pg::util::clz;
-using pg::util::ctz;
-using pg::util::popcnt;
-using pg::util::visitParamPackage;
-using pg::util::parseCmdSimply;
+using pgimpl::util::cStrToU32;
+using pgimpl::util::cStrToU64;
+using pgimpl::util::ceilDivide;
+using pgimpl::util::clz;
+using pgimpl::util::ctz;
+using pgimpl::util::popcnt;
+using pgimpl::util::visitParamPackage;
+using pgimpl::util::parseCmdSimply;
 
-} // namespace pgutils
+}  // namespace pgutil
 
 #endif // !PGZXB_PGUTILS_H

@@ -2,6 +2,7 @@
 #ifndef PGZXB_PGTEST_H
 
 #include "pg/pgfwd.h"
+#include "pg/pghfmt.h"
 #include <functional>
 
 #define PGTEST_CASE_EX(name, testsInstance) \
@@ -19,7 +20,14 @@
     } PGZXB_PASS
 
 #define PGTEST_EXPECT_EX(cond, failingMsg) PGTEST_EXPECT_EX_IMPL(cond, failingMsg, __FILE__, __LINE__)
-#define PGTEST_EXPECT(cond) PGTEST_EXPECT_EX(cond, ((const char *)nullptr))
+#define PGTEST_EXPECT(cond) PGTEST_EXPECT_EX(cond, (const char *)nullptr)
+#define PGTEST_EQ_EX(lVal, rVal, failingMsg) do { \
+        auto&& l = (lVal); \
+        auto&& r = (rVal); \
+        std::string hint = pghfmt::format("{0} != {1} {2}", l, r, failingMsg ? failingMsg : ""); \
+        PGTEST_EXPECT_EX(l == r, hint.c_str()); \
+    } while(0);
+#define PGTEST_EQ(lVal, rVal) PGTEST_EQ_EX(lVal, rVal, "")
 
 namespace pgimpl {
 namespace test {
