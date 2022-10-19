@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 set(DCMAKE_SH="CMAKE_SH-NOTFOUND")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 99)
-include_directories(include)
 add_definitions(-D__STDC_FORMAT_MACROS)
 add_definitions(-Wall)
 

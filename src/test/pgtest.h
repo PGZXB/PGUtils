@@ -1,8 +1,8 @@
 // PGTest: a lightweight test framework
 #ifndef PGZXB_PGTEST_H
 
-#include "pg/pgfwd.h"
-#include "pg/pghfmt.h"
+#include "../pgfwd.h"
+#include "../pghfmt.h"
 #include <functional>
 
 #define PGTEST_CASE_EX(name, testsInstance) \

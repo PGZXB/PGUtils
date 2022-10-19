@@ -1,7 +1,7 @@
 #ifndef PGZXB_PGTEST_TESTS_H
 #define PGZXB_PGTEST_TESTS_H
 
-#include "pg/pgfwd.h"
+#include "../pgfwd.h"
 #include <utility>
 #include <unordered_map>
 #include <string>
