@@ -10,17 +10,17 @@
 #include <type_traits>
 #include <utility>
 
-#include "pg/pgfwd.h"
+#include "../pgfwd.h"
 
 #if __cplusplus >= 201703L
 #include <any> // Only support for >= C++17
 #endif
 
-namespace pg {
+namespace pgimpl {
 namespace status {
 
 class Status;
-class StatusManger;
+class ErrorManager;
 
 class Status {
 private:
@@ -40,7 +40,7 @@ public:
     static constexpr std::uint64_t kMaxValidStatusCode = kUnkown - 1;
     static constexpr std::uint64_t kMaxBits            = 3 * 8;
 
-    explicit Status(StatusManger *mgr);
+    explicit Status(ErrorManager *mgr);
     explicit Status(StatusInternalErrCallback *callback);
     ~Status();
 
@@ -86,7 +86,7 @@ public:
 
     StatusInternalErrCallback *set_callback(StatusInternalErrCallback *callback);
 
-    void set_manager(StatusManger *mgr) {
+    void set_manager(ErrorManager *mgr) {
         internal_data_flags_ = kUseInternalMgr;
         mgr_ = mgr;
     }
@@ -135,12 +135,12 @@ private:
     std::uint64_t code_: kCodeBits;
     // internal data: as context, ptr to manager or callback
     union {
-        StatusManger *mgr_;
+        ErrorManager *mgr_;
         StatusInternalErrCallback *callback_;
     };
     void *context_{nullptr};
 };
 
-} // namespace status
-} // namespace pg
+}  // namespace status
+}  // namespace pgimpl
 #endif // !PGZXB_STATUS_H

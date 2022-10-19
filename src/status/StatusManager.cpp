@@ -1,74 +1,108 @@
 #include "StatusManager.h"
-#include "pg/pgstatus/Status.h"
-#include <string>
 
-using pg::status::Status;
-using pg::status::StatusManger;
+using pgimpl::status::ErrorManager;
+using pgimpl::status::ErrorInfo;
+using pgimpl::status::ErrorCallback;
+using pgimpl::status::RaiiTmpErrorInfoUpdater;
 
-void StatusManger::register_status(
-    std::uint64_t code,
-    const StringArg &msg,
-    const std::function<std::string(Status&)> &func) {
-    status_info_.resize(code + 1);
-    auto &info = status_info_[code];
+bool ErrorManager::tryRegisterError(
+  std::uint64_t code,
+  const std::string &msg,
+  const ErrorCallback &func) {
+    managedErrorInfo_.resize(code + 1);
+
+    auto &info = managedErrorInfo_[code];
+
+    if (info.code != ErrorInfo::kInvalidCode) {
+        return false;
+    }
+
     info.code = code;
     info.msg = msg;
     info.callback = func;
+    return true;
 }
 
-void StatusManger::remove_status(std::uint64_t code) {
-    if (code >= status_info_.size()) {
-        return;
-    }
-    auto &info = status_info_[code];
-    info.code = StatusInfo::kInvalidCode;
-    std::string().swap(info.msg);
-    info.callback = nullptr;
+bool ErrorManager::tryUpdateError(
+  std::uint64_t code,
+  const std::string * msg,
+  const ErrorCallback * func) {
+
+    auto *info = tryGetErrorInfoImpl(code);
+    if (!info) return false;
+    if (msg) info->msg = *msg;
+    if (func) info->callback = *func;
+    return true;
 }
 
-const std::string &StatusManger::get_msg(std::uint64_t code) const {
-    static std::string empty_str /* {""} */;
-    if (code >= status_info_.size()) {
-        return empty_str;
-    }
-    if (status_info_[code].code == StatusInfo::kInvalidCode) {
-        return empty_str;
-    }
-
-    return status_info_[code].msg;
+RaiiTmpErrorInfoUpdater ErrorManager::tryTmpUpdateError(
+  std::uint64_t code,
+  const std::string * msg,
+  const ErrorCallback * func) {
+    auto *info = tryGetErrorInfoImpl(code);
+    RaiiTmpErrorInfoUpdater updater;
+    if (!info) return updater; // std::move
+    updater.errorInfo_ = info;
+    updater.oldMsg_ = info->msg;
+    updater.oldCallback_ = info->callback;
+    if (msg) info->msg = *msg;
+    if (func) info->callback = *func;
+    return updater;
 }
 
-std::function<std::string(Status&)> StatusManger::get_callback(std::uint64_t code) const {
-    if (code >= status_info_.size()) {
-        return nullptr;
-    }
-    if (status_info_[code].code == StatusInfo::kInvalidCode) {
-        return nullptr;
-    }
+bool ErrorManager::tryUnregisterError(std::uint64_t code) {
+    auto *info = tryGetErrorInfoImpl(code);
+    if (!info) return false;
+    info->code = ErrorInfo::kInvalidCode;
+    std::string().swap(info->msg);
+    info->callback = nullptr;
+    return true;
+}
 
-    return status_info_[code].callback;
+const ErrorInfo * ErrorManager::tryGetErrorInfo(std::uint64_t code) const {
+    return const_cast<ErrorManager * const>(this)->tryGetErrorInfoImpl(code);
 }
 
 // static members & functions
-std::unordered_map<std::string, StatusManger> StatusManger::status_manager_map;
+std::deque<ErrorManager> ErrorManager::errorManagerMap;
 
-StatusManger *StatusManger::try_get_status_manger(const std::string &name) {
-    auto iter = status_manager_map.find(name);
-    return iter == status_manager_map.end() ? nullptr : (&iter->second);
+ErrorManager * ErrorManager::tryGetErrorManager(const std::string & name) {
+    for (auto &mgr : errorManagerMap) {
+        if (mgr.name_ == name) {
+            return &mgr;
+        }
+    }
+    return nullptr;
 }
 
-
-StatusManger &StatusManger::get_status_manager(const std::string &name) {
-    return status_manager_map[name];
+ErrorManager & ErrorManager::getOrMakeErrorManager(const std::string & name) {
+    if (auto *mgr = tryGetErrorManager(name)) return *mgr;
+    ErrorManager mgr;
+    mgr.name_ = name;
+    errorManagerMap.push_back(std::move(mgr));
+    return errorManagerMap.back();
 }
 
-void StatusManger::remove_status_manager(const std::string &name) {
-    auto iter = status_manager_map.find(name);
-    if (iter == status_manager_map.end()) return;
-    status_manager_map.erase(iter);
+bool ErrorManager::tryRemoveErrorManager(const std::string & name) {
+    auto iter = errorManagerMap.begin();
+    for (; iter != errorManagerMap.end(); ++iter) {
+        if (iter->name_ == name) break;
+    }
+    if (iter == errorManagerMap.end()) return false;
+    errorManagerMap.erase(iter);
+    return true;
 }
 
-StatusManger &StatusManger::get_default_status_manager() {
-    static StatusManger instance;
-    return instance;
+ErrorManager & ErrorManager::getGlobalErrorManager() {
+    static ErrorManager *global_mgr{&getOrMakeErrorManager(kGlobalErrorManagerName)};
+    return *global_mgr;
+}
+
+// private member functions
+ErrorInfo * ErrorManager::tryGetErrorInfoImpl(std::uint64_t code) {
+    auto &infos = managedErrorInfo_;
+    if (code < infos.size() && infos[code].code != ErrorInfo::kInvalidCode) {
+        return &infos[code];
+    }
+    return nullptr;
 }

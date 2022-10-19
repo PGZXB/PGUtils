@@ -1,10 +1,10 @@
 #include "Status.h"
-#include "pg/pgstatus/StatusManager.h"
+#include "StatusManager.h"
 
-using pg::status::Status;
-using pg::status::StatusManger;
+using pgimpl::status::Status;
+using pgimpl::status::ErrorManager;
 
-Status::Status(StatusManger *mgr)
+Status::Status(ErrorManager *mgr)
     : context_flags_(0),
     internal_data_flags_(kUseInternalMgr),
     code_(kOk),
@@ -39,9 +39,9 @@ std::string Status::invoke() {
 
     if (internal_data_flags_ == kUseInternalMgr && !is_ok()) {
         PGZXB_DEBUG_ASSERT(!!mgr_);
-        auto callback = mgr_->get_callback(code_);
-        if (!!callback) return callback(*this);
-        return mgr_->get_msg(code_);
+        const auto &errInfo = mgr_->tryGetErrorInfo(code_);
+        if (!!errInfo->callback) return errInfo->callback(*this);
+        return errInfo->msg;
     }
 
     return "";

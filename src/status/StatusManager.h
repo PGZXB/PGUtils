@@ -1,50 +1,82 @@
 #ifndef PGZXB_STATUSMANAGER_H
 #define PGZXB_STATUSMANAGER_H
 
-#include "pg/pgfwd.h"
-#include <cstdint>
-#include <functional>
-#include <limits>
-#include <memory>
+#include <deque>
 #include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+#include <limits>
+#include <functional>
 
-namespace pg {
+#include "../pgfwd.h"
+
+namespace pgimpl {
 namespace status {
 
+constexpr char kGlobalErrorManagerName[] = "PGUtils :: Global Error Manager";
+
 class Status;
+class ErrorManager;
+using ErrorCallback = std::function<std::string(Status&)>;
 
-class StatusManger {
-    struct StatusInfo {
-        static constexpr std::uint64_t kInvalidCode = std::numeric_limits<std::uint64_t>::max();
-
-        std::uint64_t code{kInvalidCode};
-        std::string msg /* {""} */;
-        std::function<std::string(Status&)> callback /* {nullptr} */;
-    };
-public:
-    void register_status(
-      std::uint64_t code,
-      const StringArg &msg,
-      const std::function<std::string(Status&)> &func = nullptr);
-    void remove_status(std::uint64_t code);
-    
-    const std::string &get_msg(std::uint64_t code) const;
-    std::function<std::string(Status&)> get_callback(std::uint64_t code) const;
-
-    static StatusManger *try_get_status_manger(const std::string &name);
-    static StatusManger &get_status_manager(const std::string &name);
-    static void remove_status_manager(const std::string &name);
-    static StatusManger &get_default_status_manager(); // name: ""
-private:
-    std::unique_ptr<Status> default_status_{nullptr};
-    std::vector<StatusInfo> status_info_;
-
-    static std::unordered_map<std::string, StatusManger> status_manager_map;
+struct ErrorInfo {
+    static constexpr std::uint64_t kInvalidCode = std::numeric_limits<std::uint64_t>::max();
+    std::uint64_t code{kInvalidCode};
+    std::string msg /* {""} */;
+    ErrorCallback callback /* {nullptr} */;
 };
 
-} // namespace status
-} // namespace pg
+class RaiiTmpErrorInfoUpdater {
+    friend class ErrorManager;
+private:
+    ErrorInfo *errorInfo_{nullptr};
+    std::string oldMsg_;
+    ErrorCallback oldCallback_;
+public:
+    bool holdErrorInfo() const {
+        return !!errorInfo_;
+    }
+
+    RaiiTmpErrorInfoUpdater() = default;
+    RaiiTmpErrorInfoUpdater(const RaiiTmpErrorInfoUpdater &) = delete;
+    RaiiTmpErrorInfoUpdater(RaiiTmpErrorInfoUpdater &&) = default;
+
+    ~RaiiTmpErrorInfoUpdater() {
+        if (errorInfo_) {
+            errorInfo_->msg = std::move(oldMsg_);
+            errorInfo_->callback = std::move(oldCallback_);
+        }
+    }
+};
+
+class ErrorManager {
+public:
+    bool tryRegisterError(
+        std::uint64_t code,
+        const std::string & msg,
+        const ErrorCallback & func = nullptr);
+    bool tryUpdateError(
+        std::uint64_t code,
+        const std::string * msg = nullptr,
+        const ErrorCallback * func = nullptr);
+    RaiiTmpErrorInfoUpdater tryTmpUpdateError(
+        std::uint64_t code,
+        const std::string * msg = nullptr,
+        const ErrorCallback * func = nullptr);
+    bool tryUnregisterError(std::uint64_t code);
+    const ErrorInfo * tryGetErrorInfo(std::uint64_t code) const;
+
+    static ErrorManager * tryGetErrorManager(const std::string & name);
+    static ErrorManager & getOrMakeErrorManager(const std::string & name);
+    static bool tryRemoveErrorManager(const std::string & name);
+    static ErrorManager & getGlobalErrorManager();
+private:
+    ErrorInfo * tryGetErrorInfoImpl(std::uint64_t code);
+
+    std::string name_/*{ "" }*/;
+    std::deque<ErrorInfo> managedErrorInfo_;
+
+    static std::deque<ErrorManager> errorManagerMap;
+};
+
+}  // namespace status
+}  // namespace pgimpl
 #endif

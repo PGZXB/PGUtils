@@ -6,11 +6,11 @@ add_definitions(-D__STDC_FORMAT_MACROS)
 add_definitions(-Wall)
 
 project(PGUtils)
-# set(PGUTILS_SRC_FILE
-#     pg/pgstatus/Status.cpp
-#     pg/pgstatus/StatusManager.cpp
-# )
-# add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
+set(PGUTILS_SRC_FILE
+    src/status/Status.cpp
+    src/status/StatusManager.cpp
+)
+add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 
 set(PGTEST_SRC_FILE src/test/pgtest_main.cpp src/test/Tests.cpp)
 add_library(PGTestMain STATIC ${PGTEST_SRC_FILE})
