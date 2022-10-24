@@ -1,20 +1,7 @@
-// Status, err or ok; support register callback on err
-
 #ifndef PGZXB_STATUS_H
 #define PGZXB_STATUS_H
 
-#include <cstdint>
-#include <cstdlib>
-#include <limits>
-#include <string>
-#include <type_traits>
-#include <utility>
-
 #include "../pgfwd.h"
-
-#if __cplusplus >= 201703L
-#include <any> // Only support for >= C++17
-#endif
 
 namespace pgimpl {
 namespace status {
@@ -28,10 +15,14 @@ private:
     static constexpr std::uint64_t kFlagsBits           = 64 - kCodeBits;
     static constexpr std::uint64_t kAllOneBits          = std::numeric_limits<std::uint64_t>::max();
     static constexpr std::uint64_t kCodeAllOneBits      = kAllOneBits >> kFlagsBits;
+    // flags for internal_
     static constexpr std::uint64_t kNotUseInternalData  = 0;
     static constexpr std::uint64_t kUseInternalMgr      = 1;
     static constexpr std::uint64_t kUseInternalCallback = 2;
-    static constexpr std::uint64_t kUseMallocContext    = 1;
+    // flags for context_
+    static constexpr std::uint64_t kNoContext           = 0;
+    static constexpr std::uint64_t kUsePlacedContext    = 1;
+    static constexpr std::uint64_t kUseMallocContext    = 2;
 public:
     using StatusInternalErrCallback = std::string(Status&);
     static constexpr std::uint64_t kOk                 = 0;
@@ -40,6 +31,7 @@ public:
     static constexpr std::uint64_t kMaxValidStatusCode = kUnkown - 1;
     static constexpr std::uint64_t kMaxBits            = 3 * 8;
 
+    Status();
     explicit Status(ErrorManager *mgr);
     explicit Status(StatusInternalErrCallback *callback);
     ~Status();
@@ -51,15 +43,15 @@ public:
     Status &operator=(Status &&) = default;
 
     Status &operator=(std::uint64_t code) {
-        PGZXB_DEBUG_Print(set_code_and_invoke(code));
+        setCodeAndInvoke(code);
         return *this;
     }
 
-    bool is_ok() const {
+    bool isOk() const {
         return this->is(kOk);
     }
 
-    bool is_unkown() const {
+    bool isUnkown() const {
         return this->is(kUnkown);
     }
 
@@ -75,70 +67,69 @@ public:
         return this->is(other.code_);
     }
 
-    void only_set_code(std::uint64_t code) {
+    void onlySetCode(std::uint64_t code) {
         code_ = code;
     }
 
-    std::string set_code_and_invoke(std::uint64_t code) {
-        code_ = code;
+    std::string setCodeAndInvoke(std::uint64_t code) {
+        onlySetCode(code);
         return this->invoke();
     }
 
-    StatusInternalErrCallback *set_callback(StatusInternalErrCallback *callback);
+    StatusInternalErrCallback * setCallback(StatusInternalErrCallback *callback);
 
-    void set_manager(ErrorManager *mgr) {
-        internal_data_flags_ = kUseInternalMgr;
-        mgr_ = mgr;
+    void setManager(ErrorManager * mgr) {
+        internalDataFlags_ = kUseInternalMgr;
+        internal_.mgr = mgr;
     }
 
     std::string invoke();
 
     template <typename T, typename ...Args>
-    void set_context(Args &&...args) {
-        if (context_flags_ == kUseMallocContext)
-            std::free(context_);
-        
-#if __cplusplus >= 201703L
-        if constexpr (sizeof(T) < sizeof(context_)) {
-            *(std::uintptr_t*)&context_ = 0;
-            new ((T*)(&context_)) T(std::forward<Args>(args)...);
-            context_flags_ = 0;
-        } else {
-#endif
-        context_ = std::malloc(sizeof(T));
-        new (context_) T(std::forward<Args>(args)...);
-        context_flags_ = kUseMallocContext;
-#if __cplusplus >= 201703L
-        }
-#endif
+    T& makeContext(Args &&...args) {
+        T * ptr = new (newContext(sizeof(T))) T{std::forward<Args>(args)...};
+        return *ptr;
+    }
+
+    void clearContext();
+
+    template <typename T>
+    const T &getContext(bool * ok = nullptr) const {
+        const_cast<Status&>(*this).getContext<T>(ok);
     }
 
     template <typename T>
-    const T &get_context() const {
-        const_cast<Status&>(*this).get_context<T>();
+    T &getContext(bool * ok = nullptr) {
+        if (ok) *ok = contextFlags_ != kNoContext;
+        return contextFlags_ == kUseMallocContext ?
+            *(T*)context_.ptr :
+            *(T*)&context_.mem;
     }
 
-    template <typename T>
-    T &get_context() {
-        return context_flags_ == kUseMallocContext ?
-            *(T*)context_ :
-            *(T*)&context_;
+    void * getRawContext() const {
+        if (contextFlags_ == kUsePlacedContext) return (void*)&context_.mem;
+        if (contextFlags_ == kUseMallocContext) return context_.ptr;
+        PGZXB_DEBUG_ASSERT(contextFlags_ == kNoContext);
+        return nullptr;
     }
 
-    std::uint64_t get_code() const {
+    std::uint64_t code() const {
         return code_;
     }
 private:
-    // higher 1 byte: as flags
-    std::uint64_t context_flags_: 4;
-    std::uint64_t internal_data_flags_: 4;
+    void * newContext(std::size_t sizeInBytes);
+
+    std::uint64_t contextFlags_: 4;
+    std::uint64_t internalDataFlags_: 4;
     std::uint64_t code_: kCodeBits;
-    // internal data: as context, ptr to manager or callback
     union {
-        ErrorManager *mgr_;
-        StatusInternalErrCallback *callback_;
-    };
-    void *context_{nullptr};
+        ErrorManager *mgr;
+        StatusInternalErrCallback *callback;
+    } internal_;
+    union {
+        void *ptr;
+        std::uintptr_t mem;
+    } context_;
 };
 
 }  // namespace status
