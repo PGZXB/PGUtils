@@ -64,6 +64,10 @@ public:
     bool tryUnregisterError(std::uint64_t code);
     const ErrorInfo * tryGetErrorInfo(std::uint64_t code) const;
 
+    const std::string & getName() const {
+        return name_;
+    }
+
     static ErrorManager * tryGetErrorManager(const std::string & name);
     static ErrorManager & getOrMakeErrorManager(const std::string & name);
     static bool tryRemoveErrorManager(const std::string & name);

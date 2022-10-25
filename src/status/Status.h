@@ -30,6 +30,7 @@ public:
     static constexpr std::uint64_t kMinValidStatusCode = 1;
     static constexpr std::uint64_t kMaxValidStatusCode = kUnkown - 1;
     static constexpr std::uint64_t kMaxBits            = 3 * 8;
+    static_assert(kOk == 0, ""); // 0 == OK
 
     Status();
     explicit Status(ErrorManager *mgr);
@@ -71,9 +72,9 @@ public:
         code_ = code;
     }
 
-    std::string setCodeAndInvoke(std::uint64_t code) {
+    std::string setCodeAndInvoke(std::uint64_t code, bool * ok = nullptr) {
         onlySetCode(code);
-        return this->invoke();
+        return this->invoke(ok);
     }
 
     StatusInternalErrCallback * setCallback(StatusInternalErrCallback *callback);
@@ -83,7 +84,7 @@ public:
         internal_.mgr = mgr;
     }
 
-    std::string invoke();
+    std::string invoke(bool * ok = nullptr);
 
     template <typename T, typename ...Args>
     T& makeContext(Args &&...args) {
@@ -115,6 +116,10 @@ public:
 
     std::uint64_t code() const {
         return code_;
+    }
+
+    ErrorManager *getMgr() const {
+        return internalDataFlags_ == kUseInternalMgr ? internal_.mgr : nullptr;
     }
 private:
     void * newContext(std::size_t sizeInBytes);

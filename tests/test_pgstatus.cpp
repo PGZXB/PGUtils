@@ -10,6 +10,7 @@ namespace {
 
 using pgstatus::Status;
 using pgstatus::ErrorManager;
+using pgstatus::ErrorCallback;
 
 enum ErrCode {
     kErrNotFound = Status::kMinValidStatusCode,
@@ -81,60 +82,108 @@ PGTEST_CASE(pgstatus) {
     PGTEST_EXPECT(status.isOk());
     PGTEST_EQ(status.code(), Status::kOk);
 
-    // // Test for Status with ErrorManager
-    // ErrorManager mgr;
-    // PGTEST_EQ(true, mgr.tryRegisterError(E(kErrNotFound), "[Error]Not found", process_err));
-    // PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInvalidKey), "[Error]Invalid key", process_err));
-    // PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInsertRepeatly), "[Error]Insert a key repeatly", process_err));
-    // PGTEST_EQ(false, mgr.tryRegisterError(E(kErrInsertRepeatly), "[Error]Insert a key repeatly", process_err));
-    // status.setManager(&mgr);
+    // Test for Status with ErrorManager
+    ErrorManager mgr;
+    PGTEST_EQ(true, mgr.tryRegisterError(E(kErrNotFound), "[Error]Not found", process_err));
+    PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInvalidKey), "[Error]Invalid key", process_err));
+    PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInsertRepeatly), "[Error]Insert a key repeatly", process_err));
+    PGTEST_EQ(false, mgr.tryRegisterError(E(kErrInsertRepeatly), "[Error]Insert a key repeatly", process_err));
+    status.setManager(&mgr);
 
-    // PGTEST_EQ(mgr.tryGetErrorInfo(kErrNotFound)->msg, "[Error]Not found");
-    // PGTEST_EQ(mgr.tryGetErrorInfo(kErrInvalidKey)->msg, "[Error]Invalid key");
-    // PGTEST_EQ(mgr.tryGetErrorInfo(kErrInsertRepeatly)->msg, "[Error]Insert a key repeatly");
+    PGTEST_EQ(mgr.tryGetErrorInfo(kErrNotFound)->msg, "[Error]Not found");
+    PGTEST_EQ(mgr.tryGetErrorInfo(kErrInvalidKey)->msg, "[Error]Invalid key");
+    PGTEST_EQ(mgr.tryGetErrorInfo(kErrInsertRepeatly)->msg, "[Error]Insert a key repeatly");
 
-    // status = E(kErrNotFound);
-    // PGTEST_EQ(status.invoke(), "Not Found");
+    status = E(kErrNotFound);
+    PGTEST_EQ(status.invoke(), "Not Found");
 
-    // status.makeContext<std::string>("KEY1");
-    // status = E(kErrInvalidKey);
-    // PGTEST_EQ(status.code(), E(kErrInvalidKey));
-    // PGTEST_EQ(status.getContext<std::string>(), "KEY1");
-    // PGTEST_EQ(status.invoke(), "Invalid key: KEY1");
+    status.makeContext<std::string>("KEY1");
+    status = E(kErrInvalidKey);
+    PGTEST_EQ(status.code(), E(kErrInvalidKey));
+    PGTEST_EQ(status.getContext<std::string>(), "KEY1");
+    PGTEST_EQ(status.invoke(), "Invalid key: KEY1");
 
-    // status.makeContext<std::string>("KEY2");
-    // status = E(kErrInsertRepeatly);
-    // PGTEST_EQ(status.code(), E(kErrInsertRepeatly));
-    // PGTEST_EQ(status.getContext<std::string>(), "KEY2");
-    // PGTEST_EQ(status.invoke(), "Insert KEY2 repeatly");
+    status.makeContext<std::string>("KEY2");
+    status = E(kErrInsertRepeatly);
+    PGTEST_EQ(status.code(), E(kErrInsertRepeatly));
+    PGTEST_EQ(status.getContext<std::string>(), "KEY2");
+    PGTEST_EQ(status.invoke(), "Insert KEY2 repeatly");
 
-    // status.makeContext<int>(111);
-    // auto o = status.getContext<int>();
-    // PGTEST_EQ(o, 111);
-    // status = o;
-    // return true;
-    // PGTEST_EQ(status.code(), 111);
-    // PGTEST_EQ(status.invoke(), "");
+    status.makeContext<int>(111);
+    status = status.getContext<int>();
+    PGTEST_EQ(status.code(), 111);
+    PGTEST_EQ(status.invoke(), "");
     
-    // const std::string msg1 = "[Error]Not found";
-    // const std::string msg2 = "[Error]Invalid key";
-    // const std::string msg3 = "[Error]Insert a key repeatly";
-    // mgr.tryUpdateError(E(kErrNotFound), &msg1, nullptr);
-    // mgr.tryUpdateError(E(kErrInvalidKey), &msg2, nullptr);
-    // mgr.tryUpdateError(E(kErrInsertRepeatly), &msg3, nullptr);
+    const std::string msg1 = "[Error]Not found";
+    const std::string msg2 = "[Error]Invalid key";
+    const std::string msg3 = "[Error]Insert a key repeatly";
+    const ErrorCallback nullCallback = nullptr;
+    mgr.tryUpdateError(E(kErrNotFound), &msg1, &nullCallback);
+    mgr.tryUpdateError(E(kErrInvalidKey), &msg2, &nullCallback);
+    mgr.tryUpdateError(E(kErrInsertRepeatly), &msg3, &nullCallback);
 
-    // status = E(kErrNotFound);
-    // PGTEST_EQ(status.invoke(), "[Error]Not found");
+    status = E(kErrNotFound);
+    PGTEST_EQ(status.invoke(), "[Error]Not found");
 
-    // status = E(kErrInvalidKey);
-    // PGTEST_EQ(status.invoke(), "[Error]Invalid key");
+    status = E(kErrInvalidKey);
+    PGTEST_EQ(status.invoke(), "[Error]Invalid key");
 
-    // status = E(kErrInsertRepeatly);
-    // PGTEST_EQ(status.invoke(), "[Error]Insert a key repeatly");
+    status = E(kErrInsertRepeatly);
+    PGTEST_EQ(status.invoke(), "[Error]Insert a key repeatly");
 
-    // status = 0; // 0 == OK
-    // PGTEST_EXPECT(status.isOk());
-    // PGTEST_EQ(status.code(), Status::kOk);
+    status = 0; // 0 == OK
+    PGTEST_EXPECT(status.isOk());
+    PGTEST_EQ(status.code(), Status::kOk);
+
+    // Test tmp-update
+    {
+        bool found = true;
+        status = 0;
+        ErrorCallback fn = [&found](Status &s) -> std::string {
+            found = false;
+            return "NotF";
+        };
+        { // Update kNotFound processing
+            auto _ = status.getMgr()->tryTmpUpdateError(1024);
+            PGTEST_EXPECT(!_.holdErrorInfo()); // Invalid err code (not registered)
+        }
+        { // Update kNotFound processing
+            auto _ = status.getMgr()->tryTmpUpdateError(E(kErrNotFound), nullptr, &fn);
+            PGTEST_EXPECT(_.holdErrorInfo());
+            PGTEST_EQ(status.setCodeAndInvoke(E(kErrNotFound)), "NotF");
+            PGTEST_EXPECT(!found);
+        }
+        found = true;
+        PGTEST_EQ(status.invoke(), "[Error]Not found");
+        PGTEST_EXPECT(found);
+    }
+
+    // Unregister error
+    {
+        PGTEST_EXPECT(status.getMgr()->tryUnregisterError(E(kErrNotFound)));
+        PGTEST_EXPECT(!status.getMgr()->tryUnregisterError(E(kErrNotFound)));
+        PGTEST_EXPECT(status.getMgr()->tryUnregisterError(E(kErrInvalidKey)));
+        PGTEST_EXPECT(!status.getMgr()->tryUnregisterError(E(kErrInvalidKey)));
+        
+        status = 0;
+        bool ok = false;
+        
+        status = kErrNotFound;
+        PGTEST_EQ(status.invoke(&ok), "");
+        PGTEST_EXPECT(!ok);
+        status = kErrInvalidKey;
+        PGTEST_EQ(status.invoke(&ok), "");
+        PGTEST_EXPECT(!ok);
+        status = kErrInsertRepeatly;
+        PGTEST_EQ(status.invoke(&ok), "[Error]Insert a key repeatly");
+        PGTEST_EXPECT(ok);
+
+        PGTEST_EXPECT(status.getMgr()->tryUnregisterError(E(kErrInsertRepeatly)));
+        PGTEST_EXPECT(!status.getMgr()->tryUnregisterError(E(kErrInsertRepeatly)));
+        status = kErrInsertRepeatly;
+        PGTEST_EQ(status.invoke(&ok), "");
+        PGTEST_EXPECT(!ok);
+    }
 
     return true;
 }

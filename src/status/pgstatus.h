@@ -5,5 +5,7 @@ namespace pgstatus {
 
 using pgimpl::status::Status;
 using pgimpl::status::ErrorManager;
+using pgimpl::status::ErrorCallback;
+using pgimpl::status::ErrorInfo;
 
 }  // namespace pgstatus
