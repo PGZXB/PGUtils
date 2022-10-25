@@ -1,5 +1,5 @@
 #include "../../src/status/Status.h"
-#include "../../src/status/StatusManager.h"
+#include "../../src/status/ErrorManager.h"
 
 namespace pgstatus {
 

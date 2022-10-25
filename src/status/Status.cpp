@@ -1,5 +1,5 @@
 #include "Status.h"
-#include "StatusManager.h"
+#include "ErrorManager.h"
 
 using pgimpl::status::Status;
 

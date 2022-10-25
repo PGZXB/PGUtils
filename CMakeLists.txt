@@ -8,7 +8,7 @@ add_definitions(-Wall)
 project(PGUtils)
 set(PGUTILS_SRC_FILE
     src/status/Status.cpp
-    src/status/StatusManager.cpp
+    src/status/ErrorManager.cpp
 )
 add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 
