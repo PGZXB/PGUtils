@@ -1,3 +1,6 @@
+#define PGZXB_DEBUG
+#include "test/pgtest.h"
+
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -8,8 +11,7 @@
 #include <set>
 #include <map>
 
-#include "pg/pghfmt.h"
-#include "pg/pgtest.h"
+#include "pghfmt.h"
 
 using pghfmt::format;
 

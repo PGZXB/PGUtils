@@ -1,3 +1,6 @@
+#define PGZXB_DEBUG
+#include "test/pgtest.h"
+
 #include <cassert>
 #include <map>
 #include <unordered_map>
@@ -5,9 +8,8 @@
 #include <iostream>
 #include <limits>
 
-#include "pg/pghfmt.h"
-#include "pg/pgtest.h"
-#include "pg/pgutil.h"
+#include "pghfmt.h"
+#include "pgutil.h"
 
 using namespace pgutil;
 

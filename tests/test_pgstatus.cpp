@@ -1,7 +1,8 @@
 #define PGZXB_DEBUG
-#include "pg/pghfmt.h"
-#include "pg/pgtest.h"
-#include "pg/pgstatus.h"
+#include "test/pgtest.h"
+
+#include "pghfmt.h"
+#include "status/pgstatus.h"
 
 #include <string>
 #include <iostream>
