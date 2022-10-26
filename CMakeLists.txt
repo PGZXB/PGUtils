@@ -3,12 +3,14 @@ set(DCMAKE_SH="CMAKE_SH-NOTFOUND")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 99)
 add_definitions(-D__STDC_FORMAT_MACROS)
+add_definitions(-DPGZXB_DEBUG)
 add_definitions(-Wall)
 
 project(PGUtils)
 set(PGUTILS_SRC_FILE
     src/status/Status.cpp
     src/status/ErrorManager.cpp
+    src/refl/utils/MemRef.cpp
 )
 add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 

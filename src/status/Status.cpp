@@ -63,12 +63,14 @@ void Status::clearContext() {
 std::string Status::invoke(bool * ok) {
     bool _ = true, &ok_ = ok ? *ok : _;
     ok_ = true; // reset
-    if (internalDataFlags_ == kUseInternalCallback && !isOk()) {
+    if (isOk()) return "";
+
+    if (internalDataFlags_ == kUseInternalCallback) {
         PGZXB_DEBUG_ASSERT(!!internal_.callback);
         return (internal_.callback)(*this);
     }
 
-    if (internalDataFlags_ == kUseInternalMgr && !isOk()) {
+    if (internalDataFlags_ == kUseInternalMgr) {
         PGZXB_DEBUG_ASSERT(!!internal_.mgr);
         const auto *errInfo = internal_.mgr->tryGetErrorInfo(code_);
         if (!errInfo) ok_ = false; // The code was not registered
@@ -76,7 +78,7 @@ std::string Status::invoke(bool * ok) {
         else return errInfo->msg;
     }
 
-    PGZXB_DEBUG_ASSERT(internalDataFlags_ == kNotUseInternalData);
+    PGZXB_DEBUG_ASSERT(!ok_ || internalDataFlags_ == kNotUseInternalData);
     ok_ = false; // No invoke-able
     return ""; 
 }
