@@ -19,6 +19,9 @@ static ManagedMem * managedMalloc(std::size_t sizeInBytes) {
     return p;
 }
 
+const MemRef MemRef::null = nullptr;
+constexpr std::size_t MemRef::kNullRefCount;
+
 MemRef::MemRef(std::size_t sizeInBytes) : managedMem_(managedMalloc(sizeInBytes)), managed_(true) {
     PGZXB_DEBUG_ASSERT(managed_ && managedMem_->refCount == 0);
     ++managedMem_->refCount;
@@ -35,14 +38,29 @@ MemRef::MemRef(const MemRef & other) : unionData_(other.unionData_), managed_(ot
     }
 }
 
-MemRef::MemRef(MemRef && other) = default;
+MemRef::MemRef(MemRef && other) : unionData_(other.unionData_), managed_(other.managed_) {
+    other.unionData_ = 0;
+    other.managed_ = false;
+}
+
+MemRef & MemRef::operator=(std::nullptr_t) {
+    clear();
+    return *this;
+}
 
 MemRef & MemRef::operator=(const MemRef &other) {
     clear();
     return *(new (this) MemRef(other));
 }
 
-MemRef & MemRef::operator=(MemRef && other) = default;
+MemRef & MemRef::operator=(MemRef && other) {
+    clear();
+    return *(new (this) MemRef(std::move(other)));
+}
+
+bool MemRef::managingMemeory() const {
+    return managed_;
+}
 
 void * MemRef::get() {
     return managed_ ? managedMem_->mem : rawMem_;
@@ -54,6 +72,18 @@ const void * MemRef::get() const {
 
 std::size_t MemRef::getRefCount() const {
     return managed_ ? managedMem_->refCount : static_cast<std::size_t>(-1);
+}
+
+bool MemRef::weakEquals(const MemRef & other) const {
+    return get() == other.get();
+}
+
+bool MemRef::strongEquals(const MemRef & other) const {
+    return weakEquals(other) && managingMemeory() == other.managingMemeory();
+}
+
+bool MemRef::operator== (const MemRef & other) const {
+    return strongEquals(other);
 }
 
 MemRef::~MemRef() {
