@@ -13,10 +13,10 @@ struct ManagedMem {
 static ManagedMem * managedMalloc(std::size_t sizeInBytes) {
     std::size_t extSize = 0;
     if (sizeInBytes > sizeof(ManagedMem::mem)) {
-        extSize = sizeInBytes - sizeof(ManagedMem);
+        extSize = sizeInBytes - sizeof(ManagedMem::mem);
     }
     ManagedMem * p = (ManagedMem*)std::malloc(sizeof(ManagedMem) + extSize);
-    return p;
+    return new (p) ManagedMem{};
 }
 
 const MemRef MemRef::null = nullptr;
