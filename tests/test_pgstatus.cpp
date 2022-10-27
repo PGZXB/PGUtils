@@ -1,4 +1,3 @@
-#define PGZXB_DEBUG
 #include "test/pgtest.h"
 
 #include "pghfmt.h"

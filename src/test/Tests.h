@@ -36,7 +36,7 @@ public:
 
     void addTest(const std::string &name, const TestFunction &func, const std::string &fileLine) {
         auto ret = tests_.insert(std::make_pair(name, TestInfo{nullptr, func, fileLine}));
-        PGZXB_DEBUG_ASSERT_EX(ret.second, "Add test repeatly, which is not allowed");
+        PGZXB_DEBUG_ASSERT(ret.second);
         auto iter = ret.first;
         iter->second.name = iter->first.c_str();
     }
