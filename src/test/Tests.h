@@ -2,13 +2,12 @@
 #define PGZXB_PGTEST_TESTS_H
 
 #include "../pgfwd.h"
-#include <utility>
-#include <unordered_map>
+#include <map>
 #include <string>
 #include <vector>
-#include <functional>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <functional>
 
 namespace pgimpl {
 namespace test {
@@ -82,7 +81,7 @@ public:
         return &t;
     }
 private:
-    mutable std::unordered_map<std::string, TestInfo> tests_;
+    mutable std::map<std::string, TestInfo> tests_;
 };
 
 } // namespace test
