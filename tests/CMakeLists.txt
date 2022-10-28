@@ -3,5 +3,8 @@
 include_directories(../src/)
 
 file(GLOB test_src_files *.cpp)
+if(PGZXB_DEBUG)
+    list(APPEND test_src_files ${BACKWARD_ENABLE})
+endif()
 add_executable(pgutils_test ${test_src_files})
 target_link_libraries(pgutils_test PGUtils PGTestMain)
