@@ -162,7 +162,7 @@ inline std::string transToString(const char * ele, const std::string & limit) {
     };
 
     const size_t len = std::strlen(ele);
-    HeapCharArrayWrapper buf(new char[len << 1]);
+    HeapCharArrayWrapper buf(new char[1 + (len * 2)]);
     char fmt[50] = { 0 };
 
     sprintf(fmt, "%%%ss", limit.c_str());

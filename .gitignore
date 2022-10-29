@@ -45,3 +45,6 @@
 
 build
 .cache
+out
+.vs
+CMakeSettings.json
