@@ -168,7 +168,7 @@ PGTEST_CASE(pgrefl_utils) {
             PGTEST_EQ(ref1.getRefCount(), 1);
             
             char * bytes = (char*)ref1.get();
-            std::strcpy(bytes, STR);
+            std::strncpy(bytes, STR, std::strlen(STR));
             PGTEST_EXPECT(std::strcmp((char*)ref1.get(), STR) == 0);
             
             ref0 = ref1;

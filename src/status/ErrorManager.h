@@ -37,14 +37,7 @@ public:
 
     RaiiTmpErrorInfoUpdater() = default;
     RaiiTmpErrorInfoUpdater(const RaiiTmpErrorInfoUpdater &) = delete;
-    RaiiTmpErrorInfoUpdater(RaiiTmpErrorInfoUpdater&& other)
-        : errorInfo_(std::move(other.errorInfo_)),
-          oldMsg_(std::move(other.oldMsg_)),
-          oldCallback_(std::move(other.oldCallback_)) {
-        other.errorInfo_ = nullptr;
-        other.oldMsg_.clear();
-        other.oldCallback_ = nullptr;
-    }
+    RaiiTmpErrorInfoUpdater(RaiiTmpErrorInfoUpdater &&) = default;
 
     ~RaiiTmpErrorInfoUpdater() {
         if (errorInfo_) {

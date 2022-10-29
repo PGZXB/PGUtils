@@ -58,7 +58,7 @@ PGTEST_CASE(pgfmt_formatSTLContainer) {
     C c(values, values + len); \
     PGTEST_EXPECT(format("{0}", c) == vStr); \
 }
-    static constexpr const char * keys[] = {"-100", "zero", "100", "1000"};
+    constexpr const char * keys[] = {"-100", "zero", "100", "1000"};
     int values[] = {-100, 0, 100, 1000};
     const char * vStr = "[-100, 0, 100, 1000]";
     const char * kvStr = "[-100 : -100, zero : 0, 100 : 100, 1000 : 1000]";
