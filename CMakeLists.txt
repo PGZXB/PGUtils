@@ -17,6 +17,11 @@ if(PGZXB_DEBUG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPGZXB_DEBUG")
 endif()
 
+if(MSVC)
+    # See https://learn.microsoft.com/en-us/cpp/build/reference/zc-cplusplus
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus")
+endif()
+
 # Add sub directories
 add_subdirectory(tests)
 add_subdirectory(ext/BackwardCpp)
