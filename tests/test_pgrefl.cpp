@@ -9,7 +9,7 @@
 #include "pgfwd.h"
 #include "pghfmt.h"
 #include "refl/TypeID.h"
-#include "refl/TypeMetaInfo.h"
+#include "refl/ClassMetaInfo.h"
 #include "refl/utils/MemRef.h"
 
 namespace {
@@ -20,14 +20,14 @@ pgimpl::refl::utils::MemRef wrapAsObject(const T & t) {
 }
 
 pgimpl::refl::utils::MemRef newObject(
-  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::TypeMetaInfo> &types,
+  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::ClassMetaInfo> &types,
   const pgimpl::refl::TypeID &typeID) {
     return pgimpl::refl::utils::MemRef(types[typeID].memMetaInfo.size);
 }
 
 template <typename T>
 pgimpl::refl::FieldMetaInfo buildValueFieldMetaInfo( // Value: special field, getter: copy and seter: assign
-  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::TypeMetaInfo> &types,
+  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::ClassMetaInfo> &types,
   const pgimpl::refl::TypeID &typeID) {
     using namespace pgimpl::refl;
     using namespace pgimpl::refl::utils;
@@ -64,7 +64,7 @@ pgimpl::refl::FieldMetaInfo buildValueFieldMetaInfo( // Value: special field, ge
 
 template <typename O, typename T>
 pgimpl::refl::FieldMetaInfo buildFieldMetaInfo( // Value: special field, getter: copy and seter: assign
-  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::TypeMetaInfo> &types,
+  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::ClassMetaInfo> &types,
   const pgimpl::refl::TypeID &typeID,
   T O::* memberPtr, const std::string & name) {
     using namespace pgimpl::refl;
@@ -104,7 +104,7 @@ pgimpl::refl::FieldMetaInfo buildFieldMetaInfo( // Value: special field, getter:
 
 template <typename T>
 void set(
-  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::TypeMetaInfo> &types, 
+  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::ClassMetaInfo> &types, 
   const pgimpl::refl::TypeID &type,
   pgimpl::refl::utils::MemRef obj, const std::string &name, const T &a) {
     auto &fn = types[type].fields[name].setter.func;
@@ -113,7 +113,7 @@ void set(
 
 template <typename T>
 T get(
-  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::TypeMetaInfo> &types, 
+  std::unordered_map<pgimpl::refl::TypeID, pgimpl::refl::ClassMetaInfo> &types, 
   const pgimpl::refl::TypeID &type,
   pgimpl::refl::utils::MemRef obj, const std::string &name) {
     auto &fn = types[type].fields[name].getter.func;
@@ -250,10 +250,10 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
     //////////////////////////////////////
     
 
-    // Build TypeMetaInfo manually & Test
+    // Build ClassMetaInfo manually & Test
     
     // Simulate pgrefl::TypeManager
-    std::unordered_map<TypeID, TypeMetaInfo> types;
+    std::unordered_map<TypeID, ClassMetaInfo> types;
 
     // Type ids
     TypeID voidID = TypeID().TOTEST_setInternalData("void"); 
@@ -267,7 +267,7 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
         types.insert({voidID, {}});
     }
     { /// int
-        TypeMetaInfo typeInfo;
+        ClassMetaInfo typeInfo;
         typeInfo.memMetaInfo.size = sizeof(int);        
         typeInfo.fields["value"] = buildValueFieldMetaInfo<int>(types, intID);
         types.insert({intID, std::move(typeInfo)});
@@ -281,7 +281,7 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
 
     // Resgiter ...
     { /// Vec2f
-        TypeMetaInfo typeInfo;
+        ClassMetaInfo typeInfo;
         typeInfo.memMetaInfo.size = sizeof(Vec2f);
         typeInfo.fields["x"] = buildFieldMetaInfo(types, intID, &Vec2f::x, "x");
         typeInfo.fields["y"] = buildFieldMetaInfo(types, intID, &Vec2f::y, "y");

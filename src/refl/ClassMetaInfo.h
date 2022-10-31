@@ -1,5 +1,5 @@
-#ifndef PGUTILS_PGREFL_TYPEINFO_H
-#define PGUTILS_PGREFL_TYPEINFO_H
+#ifndef PGUTILS_PGREFL_CLASSMETAINFO_H
+#define PGUTILS_PGREFL_CLASSMETAINFO_H
 
 #include <vector>
 #include <functional>
@@ -10,6 +10,8 @@
 
 namespace pgimpl {
 namespace refl {
+
+using ClassID = TypeID;
 
 struct MemMetaInfo {
     std::size_t size{0};
@@ -33,7 +35,7 @@ struct FieldMetaInfo {
     FuncMetaInfo getter;
 };
 
-struct TypeMetaInfo {
+struct ClassMetaInfo {
     MemMetaInfo memMetaInfo;
     std::unordered_map<std::string, FieldMetaInfo> fields;
     std::unordered_multimap<std::string, FuncMetaInfo> funcs;
@@ -41,4 +43,4 @@ struct TypeMetaInfo {
 
 }  // namespace refl
 }  // namespace pgimpl
-#endif  // !PGUTILS_PGREFL_TYPEINFO_H
+#endif  // !PGUTILS_PGREFL_CLASSMETAINFO_H
