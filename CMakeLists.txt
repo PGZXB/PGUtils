@@ -31,6 +31,8 @@ set(PGUTILS_SRC_FILE
     src/status/Status.cpp
     src/status/ErrorManager.cpp
     src/refl/utils/MemRef.cpp
+    src/refl/ClassManager.cpp
+    src/refl/ClassBuilder.cpp
 )
 add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 
