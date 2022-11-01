@@ -20,6 +20,9 @@ public:
         kAddFieldWithSameName = kMinErroEnumVal,
         kAddFuncWithSameSignature,
         kAddClassWithSameClassID,
+        kEmptyClassID,
+        kZeroMemorySize,
+        kBindingNullFunction,
         kMaxErrorEnumVal,
     };
     static_assert((unsigned)Error::kMaxErrorEnumVal < pgstatus::Status::kMaxValidStatusCode, "");
@@ -48,7 +51,21 @@ public:
     // Ext & Helpful APIs
 
     template <typename C, typename T>
-    ClassBuilder & addField(const std::string & name, T C::* fieldPtr) {}
+    ClassBuilder & addField(const std::string & name, T C::* fieldPtr) {
+        // FIXME: Use TypeID::of<T>() instead of TypeID().TOTEST_setInternalData(typeid(T).name())
+        const auto typeID = TypeID().TOTEST_setInternalData(typeid(T).name()); // Tmp
+        UniformFunc getter = [fieldPtr](utils::MemRef obj, std::vector<utils::MemRef>) -> utils::MemRef {
+            return utils::MemRef{&(( *(C*)obj.get() ).*fieldPtr )};
+        };
+
+        UniformFunc setter = [fieldPtr](utils::MemRef obj, std::vector<utils::MemRef> args) -> utils::MemRef {
+            PGZXB_DEBUG_ASSERT(args.size() == 1);
+            ( *(C*)obj.get() ).*fieldPtr = std::move(*(T*)args[0].get());
+            return utils::MemRef::null;
+        };
+
+        return addField(name, typeID, getter, setter);
+    }
 
     template <typename C, typename T>
     ClassBuilder & addField(const std::string & name, const T C::* fieldPtr)  {}

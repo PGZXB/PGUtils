@@ -1,4 +1,3 @@
-#include "refl/ClassBuilder.h"
 #include "test/pgtest.h" // Using PGTEST_*
 
 #include <cstring>
@@ -10,8 +9,10 @@
 #include "pgfwd.h"
 #include "pghfmt.h"
 #include "refl/TypeID.h"
-#include "refl/ClassMetaInfo.h"
 #include "refl/utils/MemRef.h"
+#include "refl/ClassMetaInfo.h"
+#include "refl/ClassManager.h"
+#include "refl/ClassBuilder.h"
 
 namespace {
 
@@ -319,14 +320,104 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
     }
 }
 
-PGTEST_CASE(pgrefl_ClassBuilder_basic) {
+PGTEST_CASE(pgrefl_ClassBuilder_errorReporting) {
     using namespace pgimpl::refl;
 
+    const auto kIntID = TypeID().TOTEST_setInternalData("int");
+    const auto kTmpID = ClassID().TOTEST_setInternalData("Tmp");
+
+    ClassManager clsMgr{"tmp"};
     ClassBuilder builder;
+
     builder.addField("a", TypeID::kVoid, nullptr, nullptr);
     PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kNone);
     builder.addField("a", TypeID::kVoid, nullptr, nullptr); // U
     PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kAddFieldWithSameName);
+
+    ClassBuilder::UniformFunc fn = [](utils::MemRef, std::vector<utils::MemRef>) -> utils::MemRef {
+        return utils::MemRef::null;
+    };
+
+    builder.addFunction("func", TypeID::kVoid, {kIntID, kIntID}, fn);
+    PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kNone);
+    builder.addFunction("func", TypeID::kVoid, {kIntID, kIntID}, fn); // U
+    PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kAddFuncWithSameSignature);
+
+    PGTEST_EQ(builder.commit(&clsMgr), false);
+    PGTEST_EXPECT(clsMgr.tryGetClass(kTmpID) == nullptr);
+
+    builder.id(kTmpID);
+    PGTEST_EQ(builder.commit(&clsMgr), false);
+    PGTEST_EXPECT(clsMgr.tryGetClass(kTmpID) == nullptr);
+    
+    builder.memSize(64);
+    PGTEST_EQ(builder.commit(&clsMgr), true);
+    PGTEST_EXPECT(clsMgr.tryGetClass(kTmpID) != nullptr);
+
+    return true;
+}
+
+PGTEST_CASE(pgrefl_ClassBuilder_basicUsage) {
+    using namespace pgimpl::refl;
+
+    struct Pair { int x{0}, y{0}; };
+
+    const auto kPairID = ClassID().TOTEST_setInternalData("Pair");
+    const auto kIntID = ClassID().TOTEST_setInternalData("int");
+
+    ClassManager clsMgr{"M"};
+    
+    // TODO: Checking current status before each (chain) call
+    ClassBuilder().id(kPairID)
+        .memSize(sizeof(Pair))
+        .addField("x", &Pair::x)
+        .addField("y", &Pair::y)
+        .commit(&clsMgr);
+
+    auto * i = clsMgr.tryGetClass(kPairID);
+    PGTEST_EXPECT(i != nullptr);
+
+    Pair p;
+
+    auto mkInt = [](int val) {
+        utils::MemRef ref(sizeof(int));
+        new (ref.get()) int{val};
+        return ref;
+    };
+
+    auto set = [i, mkInt](Pair * p, const std::string & name, int val) {
+        // The memory of arguments should be alloc/dealloc by StackMemoryAllocator
+        i->fields[name].setter.func(utils::MemRef{p}, {mkInt(val)});
+    };
+
+    auto get = [i](Pair * p, const std::string & name) {
+        return *(int*)(i->fields[name].getter.func(utils::MemRef{p}, {}).get());
+    };
+
+    set(&p, "x", 10241024);
+    set(&p, "y", 20202020);
+
+    PGTEST_EQ(get(&p, "x"), p.x);
+    PGTEST_EQ(get(&p, "x"), 10241024);
+    
+    PGTEST_EQ(get(&p, "y"), p.y);
+    PGTEST_EQ(get(&p, "y"), 20202020);
+
+    std::string info;
+    auto print = [i, get, &info](Pair * p) {
+        info.clear();
+        info += "{";
+        for (const auto & e : i->fields) {
+            info += e.first;
+            info += "=";
+            info += std::to_string(get(p, e.first));
+            info += " ";
+        }
+        if (info.size() > 1) info.back() = '}';
+    };
+
+    print(&p);
+    // PGTEST_EQ(info, "{y=20202020 x=10241024}"); // depend on: std::unordered_map & std::hash
 
     return true;
 }

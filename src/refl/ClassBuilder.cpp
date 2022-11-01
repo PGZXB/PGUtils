@@ -33,17 +33,22 @@ struct DebuggingInfo {
 }  // namespace
 
 // internal functions
+#if defined(PGZXB_DEBUG)
 static void setDebuggingInfo(DebuggingInfo * d, const char *filename, std::size_t lineno) {
     d->filename = filename;
     d->lineno = lineno;
 }
+#endif // !PGZXB_DEBUG
 
 static std::string debuggingProcErrOfClassBuilder(pgstatus::Status & s) {
     static const char * MSG_TABLE[(std::size_t)ClassBuilder::Error::kMaxErrorEnumVal] = {
         "", //
-        "[WARN] Add field with same name", // kAddFieldWithSameName
-        // kAddFuncWithSameSignature
-        // kAddClassWithSameClassID
+        "[Error] Add field with same name", // kAddFieldWithSameName
+        "[Error] Add function with same signature", // kAddFuncWithSameSignature
+        "[Error] Register Class with same class id", // kAddClassWithSameClassID
+        "[Error] ID of class to be registered is empty", // kEmptyClassID
+        "[Error] Memory size of class to be registered is 0", // kZeroMemorySize
+        "[Error] Native function to be binded is null", // kBindingNullFunction
     };
     PGZXB_DEBUG_ASSERT(s.code() < (sizeof(MSG_TABLE) / sizeof(*MSG_TABLE)));
     const char * msg = MSG_TABLE[s.code()];
@@ -113,10 +118,11 @@ ClassBuilder & ClassBuilder::addField(
 }
 
 ClassBuilder & ClassBuilder::addFunction(
-  const std::string & name, 
+  const std::string & name,
   const TypeID & retType,
   const std::vector<TypeID> & paramTypes,
   const UniformFunc & fn) {
+    if (!fn) errorReturn(Err::kBindingNullFunction);
     auto & funcs = buildingClassInfo_.funcs;
     auto iterPair = funcs.equal_range(name);
     for (auto iter = iterPair.first, end = iterPair.second; iter != end; ++iter) {
@@ -133,6 +139,8 @@ ClassBuilder & ClassBuilder::addFunction(
 }
 
 bool ClassBuilder::commit(ClassManager *mgr) {
+    if (classID_ == TypeID::kNull) errorReturnEx(Err::kEmptyClassID, false);
+    if (buildingClassInfo_.memMetaInfo.size == 0) errorReturnEx(Err::kZeroMemorySize, false);
     auto ok = mgr->tryRegisterClass(classID_, std::move(buildingClassInfo_));
     if (!ok) errorReturnEx(Err::kAddClassWithSameClassID, false);
     okReturnEx(true);    
@@ -141,7 +149,6 @@ bool ClassBuilder::commit(ClassManager *mgr) {
 const pgstatus::Status & ClassBuilder::getCurrentStatus() const {
     return status_;
 }
-
 
 // private functions
 pgstatus::ErrorManager * ClassBuilder::getErrorManager() {
