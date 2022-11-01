@@ -31,6 +31,7 @@ set(PGUTILS_SRC_FILE
     src/status/Status.cpp
     src/status/ErrorManager.cpp
     src/refl/utils/MemRef.cpp
+    src/refl/TypeID.cpp
     src/refl/ClassManager.cpp
     src/refl/ClassBuilder.cpp
 )

@@ -18,6 +18,7 @@ public:
 
     const std::string & getName() const;
 
+    bool tryRegisterClass(const ClassID & classID, ClassMetaInfo classInfo);
     void updateOrRegisterClass(const ClassID & classID, ClassMetaInfo classInfo);
     bool tryRemoveClass(const ClassID & classID);
     ClassMetaInfo * tryGetClass(const ClassID & classID);

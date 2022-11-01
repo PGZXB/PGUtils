@@ -14,8 +14,19 @@ class ClassBuilder {
 public:
     using UniformFunc = FuncMetaInfo::NativeFunc;
 
+    enum class Error : unsigned {
+        kNone = pgstatus::Status::kOk,
+        kMinErroEnumVal = pgstatus::Status::kMinValidStatusCode,
+        kAddFieldWithSameName = kMinErroEnumVal,
+        kAddFuncWithSameSignature,
+        kAddClassWithSameClassID,
+        kMaxErrorEnumVal,
+    };
+    static_assert((unsigned)Error::kMaxErrorEnumVal < pgstatus::Status::kMaxValidStatusCode, "");
+
     // Core & Stable APIs
-    
+    ClassBuilder();
+
     ClassBuilder & id(const ClassID & classID);
 
     ClassBuilder & memSize(std::size_t sizeInBytes);
@@ -26,11 +37,6 @@ public:
         const UniformFunc & getter,
         const UniformFunc & setter);
     
-    ClassBuilder & addStaticField(
-        const std::string & name,
-        const TypeID & type,
-        void * ptr, bool readOnly);
-
     ClassBuilder & addFunction(
         const std::string & name, 
         const TypeID & retType,
@@ -65,8 +71,11 @@ public:
     // Get current status (Get last error)
     const pgstatus::Status & getCurrentStatus() const;
 private:
-    pgstatus::ErrorManager * getErrorManager();
+    static pgstatus::ErrorManager * getErrorManager();
 
+#if defined(PGZXB_DEBUG)
+    void * debuggingContext_{nullptr};
+#endif  // !PGZXB_DEBUG
     pgstatus::Status status_;
     ClassID classID_;
     ClassMetaInfo buildingClassInfo_;

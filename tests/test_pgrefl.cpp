@@ -1,3 +1,4 @@
+#include "refl/ClassBuilder.h"
 #include "test/pgtest.h" // Using PGTEST_*
 
 #include <cstring>
@@ -318,6 +319,18 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
         PGTEST_EQ(get<int>(types, vec2fID, wrapAsObject(vec2), "x"), 1024);
         PGTEST_EQ(get<int>(types, vec2fID, wrapAsObject(vec2), "y"), 2048);
     }
+
+    return true;
+}
+
+PGTEST_CASE(pgrefl_ClassBuilder_basic) {
+    using namespace pgimpl::refl;
+
+    ClassBuilder builder;
+    builder.addField("a", TypeID::kVoid, nullptr, nullptr);
+    PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kNone);
+    builder.addField("a", TypeID::kVoid, nullptr, nullptr); // U
+    PGTEST_EQ(builder.getCurrentStatus().code(), (std::uint64_t)ClassBuilder::Error::kAddFieldWithSameName);
 
     return true;
 }
