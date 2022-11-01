@@ -13,6 +13,10 @@ const std::string & ClassManager::getName() const {
     return name_;    
 }
 
+bool ClassManager::tryRegisterClass(const ClassID & classID, ClassMetaInfo classInfo) {
+    return classes_.insert({classID, std::move(classInfo)}).second;
+}
+
 void ClassManager::updateOrRegisterClass(const ClassID & classID, ClassMetaInfo classInfo) {
     classes_[classID] = std::move(classInfo);
 }

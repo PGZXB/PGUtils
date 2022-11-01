@@ -9,6 +9,7 @@ namespace refl {
 // !!TMP!!
 class TypeID {
 public:
+    static const TypeID kVoid;
 
     TypeID & TOTEST_setInternalData(const std::string & s) {
         id_ = s;
