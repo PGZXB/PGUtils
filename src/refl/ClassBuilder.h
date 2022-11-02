@@ -49,6 +49,13 @@ public:
     bool commit(ClassManager *mgr);
 
     // Ext & Helpful APIs
+    template <typename C>
+    ClassBuilder & autoBuild() {
+        // TODO: Gen TypeID & Set id
+        // TODO: Set memSize
+        // TODO: Auto add functions (ctors, dtor, operator() ...)
+        return *this;
+    }
 
     template <typename C, typename T>
     ClassBuilder & addField(const std::string & name, T C::* fieldPtr) {
