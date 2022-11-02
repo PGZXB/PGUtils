@@ -37,6 +37,7 @@ set(PGUTILS_SRC_FILE
     src/refl/TypeID.cpp
     src/refl/ClassManager.cpp
     src/refl/ClassBuilder.cpp
+    src/refl/Object.cpp
 )
 add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 
