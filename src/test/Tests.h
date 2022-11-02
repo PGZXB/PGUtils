@@ -2,6 +2,7 @@
 #define PGZXB_PGTEST_TESTS_H
 
 #include "../pgfwd.h"
+#include "pgtest.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -12,10 +13,11 @@
 namespace pgimpl {
 namespace test {
 
-using TestFunction = std::function<bool()>;
+class Context;
+using TestFunction = std::function<bool(Context&)>;
 
 namespace detail {
-inline bool empty_test() {
+inline bool empty_test(Context&) {
     return false;
 }
 }
@@ -63,7 +65,8 @@ public:
         for (auto &e: tests_) {
             const auto &name = e.first;
             const auto &func = e.second.testFunc;
-            bool ok = func();
+            Context ctx;
+            bool ok = func(ctx);
             if (ok) {
                 ++okCnt;
                 e.second.lastRunOk = true;

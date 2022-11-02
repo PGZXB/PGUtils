@@ -194,6 +194,27 @@ inline std::vector<const char *> parseCmdSimply(int argc, char* argv[], const Ma
     return ext;
 }
 
+class RaiiCleanup {
+public:
+    RaiiCleanup(std::function<void()> fn) : fn_(std::move(fn)) {
+    }
+
+    RaiiCleanup(const RaiiCleanup &) = delete;
+    RaiiCleanup(RaiiCleanup && o) = default;
+
+    RaiiCleanup & operator= (const RaiiCleanup &) = delete;
+    RaiiCleanup & operator= (RaiiCleanup &&) = default;
+
+    ~RaiiCleanup() {
+        if (fn_) {
+            fn_();
+            fn_ = nullptr;
+        }
+    }
+private:
+    std::function<void()> fn_{nullptr};
+};
+
 }  // namespace util
 }  // namespace pgimpl
 
@@ -209,6 +230,7 @@ using pgimpl::util::ctz;
 using pgimpl::util::popcnt;
 using pgimpl::util::visitParamPackage;
 using pgimpl::util::parseCmdSimply;
+using pgimpl::util::RaiiCleanup;
 
 }  // namespace pgutil
 
