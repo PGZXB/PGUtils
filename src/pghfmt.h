@@ -32,7 +32,9 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 #include <type_traits>
+#include <cstring>
 
 #define PGZXB_PGFMT_MIN_CPLUSPLUS 201103L
 #if PGZXB_PGFMT_MIN_CPLUSPLUS > __cplusplus
