@@ -1,6 +1,7 @@
 #ifndef PGZXB_STATUS_H
 #define PGZXB_STATUS_H
 
+#include <limits>
 #include "../pgfwd.h"
 
 namespace pgimpl {
