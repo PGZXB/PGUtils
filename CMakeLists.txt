@@ -23,8 +23,11 @@ if(MSVC)
 endif()
 
 # Add sub directories
+if(PGZXB_DEBUG)
+    add_subdirectory(ext/BackwardCpp)
+endif()
+
 add_subdirectory(tests)
-add_subdirectory(ext/BackwardCpp)
 
 # Add libraries
 set(PGUTILS_SRC_FILE

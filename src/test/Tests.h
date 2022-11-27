@@ -13,11 +13,10 @@
 namespace pgimpl {
 namespace test {
 
-class Context;
-using TestFunction = std::function<bool(Context&)>;
+using TestFunction = std::function<bool()>;
 
 namespace detail {
-inline bool empty_test(Context&) {
+inline bool empty_test() {
     return false;
 }
 }
@@ -65,15 +64,16 @@ public:
         for (auto &e: tests_) {
             const auto &name = e.first;
             const auto &func = e.second.testFunc;
-            Context ctx;
-            bool ok = func(ctx);
-            if (ok) {
-                ++okCnt;
-                e.second.lastRunOk = true;
-            } else
-                e.second.lastRunOk = false;
+            bool passed{false};
+            try {
+                passed = func();
+            } catch (pgimpl::test::TestRunFailed &) {
+                passed = false;
+            }
+            if (passed) ++okCnt;
+            e.second.lastRunOk = passed;
             // FIXME: Cross platform: print colorful text
-            std::cerr << std::setw(width) << cnt++ << '/' << strTotal << (ok ? "\033[32m[OK]\033[0m" : "\033[31m[NO]\033[0m") << ' ' << name << '\n';
+            std::cerr << std::setw(width) << cnt++ << '/' << strTotal << (passed ? "\033[32m[OK]\033[0m" : "\033[31m[NO]\033[0m") << ' ' << name << '\n';
         }
 
         return std::make_pair(okCnt, total);
