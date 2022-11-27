@@ -1,4 +1,6 @@
 #include "Status.h"
+
+#include <cstring>
 #include "ErrorManager.h"
 
 using pgimpl::status::Status;
