@@ -9,11 +9,15 @@ namespace builtin_names {
 
 constexpr const char kConstructorFunctionName[] = MAKE_BUILTIN_NAME("ctor");
 constexpr const char kDeconstructorFunctionName[] = MAKE_BUILTIN_NAME("dtor");
-constexpr const char kOperatorAssignFunctionName[] = MAKE_BUILTIN_NAME("op_assign");
-constexpr const char kOperatorCallFunctionName[] = MAKE_BUILTIN_NAME("op_call");
-constexpr const char kOperatorEqFunctionName[] = MAKE_BUILTIN_NAME("op_eq");
-constexpr const char kOperatorLtFunctionName[] = MAKE_BUILTIN_NAME("op_lt");
+constexpr const char kOperatorAssignFunctionName[] = MAKE_BUILTIN_NAME("opAssign");
+constexpr const char kOperatorCallFunctionName[] = MAKE_BUILTIN_NAME("opCall");
+constexpr const char kOperatorEqFunctionName[] = MAKE_BUILTIN_NAME("opEq");
+constexpr const char kOperatorCmpFunctionName[] = MAKE_BUILTIN_NAME("cmp");
 constexpr const char kHashcodeFunctionName[] = MAKE_BUILTIN_NAME("hashcode");
+constexpr const char kDeepcopyFunctionName[] = MAKE_BUILTIN_NAME("deepcopy");
+constexpr const char kToStringFunctionName[] = MAKE_BUILTIN_NAME("toString");
+
+#undef MAKE_BUILTIN_NAME
 
 }  // namespace builtin_names
 }  // namespace refl
