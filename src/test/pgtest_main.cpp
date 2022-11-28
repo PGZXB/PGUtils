@@ -1,5 +1,4 @@
 #include <iostream>
-#include "pgtest.h"
 #include "Tests.h"
 
 // PGTestMain

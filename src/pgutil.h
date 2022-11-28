@@ -1,6 +1,7 @@
 #ifndef PGZXB_PGUTILS_H
 #define PGZXB_PGUTILS_H
 
+#include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
@@ -8,7 +9,9 @@
 #include <limits>
 #include <vector>
 #include <utility>
+#include <fstream>
 #include <functional>
+#include <unistd.h> // FIXME: Adapt Windows
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -162,6 +165,14 @@ private:
 };
 #endif
 
+template <typename Data>
+struct AllwaysTrue {
+    Data data;
+    operator bool () const {
+        return true;
+    }
+};
+
 struct ParseCmdConfig {
     using ParseCmdCallback = std::function<bool(const char* str)>;
     enum {
@@ -194,12 +205,107 @@ inline std::vector<const char *> parseCmdSimply(int argc, char* argv[], const Ma
     return ext;
 }
 
+class RaiiCleanup {
+public:
+    RaiiCleanup(std::function<void()> fn) : fn_(std::move(fn)) {
+    }
+
+    RaiiCleanup(const RaiiCleanup &) = delete;
+    RaiiCleanup(RaiiCleanup && o) = default;
+
+    RaiiCleanup & operator= (const RaiiCleanup &) = delete;
+    RaiiCleanup & operator= (RaiiCleanup &&) = default;
+
+    ~RaiiCleanup() {
+        if (fn_) {
+            fn_();
+            fn_ = nullptr;
+        }
+    }
+private:
+    std::function<void()> fn_{nullptr};
+};
+
+class FdCapture {
+public:
+    enum Fd { kNone = -1, kStdoutFd = 1, kStderrFd = 2 };
+
+    explicit FdCapture(int fd) : capturedFd_(fd) {
+    }
+
+    bool begin() {
+        // FIXME: Adapt Windows
+        copyFd_ = ::dup(capturedFd_);
+        tmpFile_ = "/tmp/pgtest_cap_XXXXXX";
+        auto capFd = ::mkstemp(const_cast<char*>(tmpFile_.data()));
+        if (capFd == -1) return false;
+        ::fflush(nullptr);
+        ::dup2(capFd, capturedFd_);
+        ::close(capFd);
+        return true;
+    }
+
+    bool end(std::string &outMsg) {
+        if (copyFd_ == -1) return false;
+        // Un-capture
+        ::fflush(nullptr);
+        ::dup2(copyFd_, capturedFd_);
+        ::close(copyFd_);
+
+        // Get captured msg
+        std::string buffer;
+        {
+            std::ifstream f(tmpFile_);
+            // Make buffer
+            f.seekg(0, std::ios::end);
+            auto len = f.tellg();
+            f.seekg(0, std::ios::beg);
+            buffer.resize(len, '\0');
+            // Read bytes to buffer
+            f.read(const_cast<char*>(buffer.data()), len);
+            assert(f.tellg() == len);
+        }
+        outMsg = std::move(buffer);
+        std::remove(tmpFile_.c_str());
+
+        // reset internal data
+        copyFd_ = -1;
+
+        return true;
+    }
+
+    Fd getCapturedFd() const {
+        return (Fd)capturedFd_;
+    }
+private:
+    int copyFd_{-1};
+    int capturedFd_{-1};
+    std::string tmpFile_;
+};
+
+class StdoutCapture : public FdCapture {
+public:
+    StdoutCapture() : FdCapture(FdCapture::kStdoutFd) {
+    }
+};
+
+class StderrCapture : public FdCapture {
+public:
+    StderrCapture() : FdCapture(FdCapture::kStderrFd) {
+    }
+};
+
 }  // namespace util
 }  // namespace pgimpl
 
 namespace pgutil {
 
 using pgimpl::util::ParseCmdConfig;
+using pgimpl::util::RaiiCleanup;
+using pgimpl::util::FdCapture;
+using pgimpl::util::StdoutCapture;
+using pgimpl::util::StderrCapture;
+using pgimpl::util::AllwaysTrue;
 
 using pgimpl::util::cStrToU32;
 using pgimpl::util::cStrToU64;
