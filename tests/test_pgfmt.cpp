@@ -61,8 +61,8 @@ PGTEST_CASE(pgfmt_formatSTLContainer) {
     int values[] = {-100, 0, 100, 1000};
     const char * vStr = "[-100, 0, 100, 1000]";
     const char * kvStr = "[-100 : -100, zero : 0, 100 : 100, 1000 : 1000]";
-    constexpr auto kLen = sizeof(keys) / sizeof(*keys);
-    constexpr auto vLen = sizeof(values) / sizeof(*values);
+    constexpr std::size_t kLen = sizeof(keys) / sizeof(*keys);
+    constexpr std::size_t vLen = sizeof(values) / sizeof(*values);
     static_assert(kLen == vLen, "");
     constexpr auto len = kLen;
 
@@ -72,14 +72,14 @@ PGTEST_CASE(pgfmt_formatSTLContainer) {
     { // map
         struct Less {
             bool operator() (const std::string & a, const std::string & b) const {
-                int i{0}, j{0};
+                std::size_t i{0}, j{0};
                 for (; i < len && a != keys[i]; ++i);
                 for (; j < len && b != keys[j]; ++j);
                 return i < j;
             }
         };
         std::map<std::string, int, Less> c;
-        for (int i = 0; i < len; ++i) c[keys[i]] = values[i];
+        for (std::size_t i = 0; i < len; ++i) c[keys[i]] = values[i];
         PGTEST_EXPECT(format("{0}", c) == kvStr);
     }
 }

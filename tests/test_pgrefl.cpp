@@ -131,7 +131,7 @@ PGTEST_CASE(pgrefl_utils) {
 
     {
         MemRef refStackMem{buffer};
-        PGTEST_EQ(refStackMem.getRefCount(), -1);
+        PGTEST_EQ(refStackMem.getRefCount(), (std::size_t)-1);
         auto *pStr = new (refStackMem.get()) std::string{"HELLO WORLD"};
         pStr->append("HELLO WORLD");
         PGTEST_EQ((void*)buffer, (void*)pStr);
@@ -144,7 +144,7 @@ PGTEST_CASE(pgrefl_utils) {
 
     {
         MemRef ref0(sizeof(std::string));
-        PGTEST_EQ(ref0.getRefCount(), 1);
+        PGTEST_EQ(ref0.getRefCount(), (std::size_t)1);
         auto *pStr = new (ref0.get()) std::string{"HELLO WORLD"};
         pStr->append("HELLO WORLD");
         PGTEST_EQ(*pStr, "HELLO WORLDHELLO WORLD");
@@ -161,28 +161,28 @@ PGTEST_CASE(pgrefl_utils) {
         using Bytes = char[1024];
         const char STR[] = "Hello, PGUtils!!";
         MemRef ref0(sizeof(Bytes)), ref0copy = ref0;
-        PGTEST_EQ(ref0.getRefCount(), 2);
+        PGTEST_EQ(ref0.getRefCount(), (std::size_t)2);
         PGTEST_EQ(ref0.get(), ref0copy.get());
         {
             MemRef ref1(sizeof(Bytes));
-            PGTEST_EQ(ref1.getRefCount(), 1);
+            PGTEST_EQ(ref1.getRefCount(), (std::size_t)1);
             
             char * bytes = (char*)ref1.get();
             std::strcpy(bytes, STR);
             PGTEST_EXPECT(std::strcmp((char*)ref1.get(), STR) == 0);
             
             ref0 = ref1;
-            PGTEST_EQ(ref0copy.getRefCount(), 1);;
-            PGTEST_EQ(ref1.getRefCount(), 2);
-            PGTEST_EQ(ref0.getRefCount(), 2);
+            PGTEST_EQ(ref0copy.getRefCount(), (std::size_t)1);;
+            PGTEST_EQ(ref1.getRefCount(), (std::size_t)2);
+            PGTEST_EQ(ref0.getRefCount(), (std::size_t)2);
             PGTEST_EQ(ref0.get(), ref1.get());
         }
         {
-            PGTEST_EQ(ref0.getRefCount(), 1);
+            PGTEST_EQ(ref0.getRefCount(), (std::size_t)1);
             MemRef ref2 = std::move(ref0);
             PGTEST_EQ(ref0.get(), nullptr);
-            PGTEST_EQ(ref0.getRefCount(), -1);
-            PGTEST_EQ(ref2.getRefCount(), 1);
+            PGTEST_EQ(ref0.getRefCount(), (std::size_t)-1);
+            PGTEST_EQ(ref2.getRefCount(), (std::size_t)1);
             PGTEST_EXPECT(std::strcmp((char*)ref2.get(), STR) == 0);
 
             pMem = ref2.get();
@@ -193,12 +193,12 @@ PGTEST_CASE(pgrefl_utils) {
         //     PGTEST_EXPECT(std::strcmp((char*)pMem, STR) == 0);
         // }
         pMem = ref0copy.get();
-        PGTEST_EQ(ref0copy.getRefCount(), 1);
+        PGTEST_EQ(ref0copy.getRefCount(), (std::size_t)1);
         MemRef ref0move = std::move(ref0copy);
         PGTEST_EQ(ref0move.get(), pMem);
-        PGTEST_EQ(ref0move.getRefCount(), 1);
+        PGTEST_EQ(ref0move.getRefCount(), (std::size_t)1);
         PGTEST_EQ(ref0copy.get(), nullptr);
-        PGTEST_EQ(ref0copy.getRefCount(), -1);
+        PGTEST_EQ(ref0copy.getRefCount(), (std::size_t)-1);
 
         ref0move = nullptr;
         PGTEST_EQ(ref0move, MemRef::null);

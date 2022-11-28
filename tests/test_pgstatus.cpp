@@ -66,14 +66,14 @@ PGTEST_CASE(pgstatus) {
 
     status.makeContext<int>(111);
     status = status.getContext<int>();
-    PGTEST_EQ(status.code(), 111);
+    PGTEST_EQ(status.code(), (std::size_t)111);
     PGTEST_EQ(status.invoke(), "<default-err-string>111");
     status.setCallback(process_err_2);
     PGTEST_EQ(status.invoke(), "<default-err-string-2>");
     
     status.makeContext<int>(222);
     status = status.getContext<int>();
-    PGTEST_EQ(status.code(), 222);
+    PGTEST_EQ(status.code(), (std::size_t)222);
     PGTEST_EQ(status.invoke(), "<default-err-string-2>");
     status.setCallback(process_err);
     PGTEST_EQ(status.invoke(), "<default-err-string>222");
@@ -111,7 +111,7 @@ PGTEST_CASE(pgstatus) {
 
     status.makeContext<int>(111);
     status = status.getContext<int>();
-    PGTEST_EQ(status.code(), 111);
+    PGTEST_EQ(status.code(), (std::size_t)111);
     PGTEST_EQ(status.invoke(), "");
     
     const std::string msg1 = "[Error]Not found";
