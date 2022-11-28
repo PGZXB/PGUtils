@@ -1,13 +1,9 @@
 #ifndef PGZXB_PGTEST_TESTS_H
 #define PGZXB_PGTEST_TESTS_H
 
-#include "../pgfwd.h"
-#include "pgtest.h"
 #include <map>
 #include <string>
 #include <vector>
-#include <iomanip>
-#include <iostream>
 #include <functional>
 
 namespace pgimpl {

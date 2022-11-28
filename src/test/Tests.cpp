@@ -1,8 +1,13 @@
-#include "pgtest.h"
 #include "Tests.h"
+
+#include <iomanip>
+#include <iostream>
+#include "../pgfwd.h"
 
 namespace pgimpl {
 namespace test {
+
+class TestRunFailed : std::exception { };
 
 // class Tests
 void Tests::addTest(const std::string &name, const TestFunction &func, const std::string &fileLine) {
