@@ -41,8 +41,6 @@ PGTEST_CASE(pgutil_basic) {
     PGTEST_EXPECT(ctz(bits) == 0);
     // popcnt
     PGTEST_EXPECT(popcnt(bits) == 8);
-
-    return true;
 }
 
 PGTEST_CASE(pgutil_visitParamPackage) {
@@ -90,7 +88,6 @@ PGTEST_CASE(pgutil_visitParamPackage) {
         std::vector<int>{1, 2, 3},
         std::map<int, char>{{1, '1'}, {2, '2'}});
     PGTEST_EQ(caa2.result, "abc0.123[1, 2, 3][1 : 1, 2 : 2]");
-    return true;
 }
 
 PGTEST_CASE(pgutil_parseCmdSimply) {
@@ -136,6 +133,4 @@ PGTEST_CASE(pgutil_parseCmdSimply) {
     PGTEST_EQ(f, true);
     PGTEST_EQ(z, 100);
     PGTEST_EQ(ext, std::vector<const char *>{argvBuf[2]});
-
-    return true;
 }

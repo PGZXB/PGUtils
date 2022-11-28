@@ -42,7 +42,6 @@ PGTEST_CASE(pgfmt_formatInterger) {
     auto str2 = format("1 == 2 : {0}", 1 == 2);
     PGTEST_EXPECT(str2 == "1 == 2 : false");
 
-    return true;
 #undef T_GROUP_FOR
 #undef T_VAR
 }

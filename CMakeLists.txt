@@ -38,7 +38,8 @@ set(PGUTILS_SRC_FILE
 add_library(PGUtils STATIC ${PGUTILS_SRC_FILE})
 
 set(PGTEST_SRC_FILE
-    src/test/pgtest_main.cpp
+    src/test/utils.cpp
     src/test/pgtest.cpp
-    src/test/Tests.cpp)
+    src/test/Tests.cpp
+    src/test/pgtest_main.cpp)
 add_library(PGTestMain STATIC ${PGTEST_SRC_FILE})

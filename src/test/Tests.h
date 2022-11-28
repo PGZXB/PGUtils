@@ -5,11 +5,12 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include "utils.h"
 
 namespace pgimpl {
 namespace test {
 
-using TestFunction = std::function<bool()>;
+using TestFunction = std::function<void(TestCaseContext&)>;
 
 class Tests {
 public:

@@ -7,8 +7,6 @@
 namespace pgimpl {
 namespace test {
 
-class TestRunFailed : std::exception { };
-
 // class Tests
 void Tests::addTest(const std::string &name, const TestFunction &func, const std::string &fileLine) {
     auto ret = tests_.insert(std::make_pair(name, TestInfo{nullptr, func, fileLine}));
@@ -39,13 +37,10 @@ std::pair<int, int> Tests::runAllTests() const {
 
     for (auto &e: tests_) {
         const auto &name = e.first;
-        const auto &func = e.second.testFunc;
-        bool passed{false};
-        try {
-            passed = func();
-        } catch (pgimpl::test::TestRunFailed &) {
-            passed = false;
-        }
+        auto &tsetCaseFunc = e.second.testFunc;
+        TestCaseContext ctx;
+        tsetCaseFunc(ctx);
+        bool passed = !ctx.failed();
         if (passed) ++okCnt;
         e.second.lastRunOk = passed;
         // FIXME: Cross platform: print colorful text

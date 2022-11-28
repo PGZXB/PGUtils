@@ -5,20 +5,23 @@ namespace pgimpl {
 namespace test {
 
 // class CapturedFdMsgEqHelper
-CapturedFdMsgEqHelper::CapturedFdMsgEqHelper(pgutil::FdCapture::Fd capturedFd, std::string expectedOutput, const char * filename, std::size_t lineno, std::string failingMsg) :
-    capture_(capturedFd),
-    filename_(filename),
-    lineno_(lineno),
-    failingMsg_(failingMsg),
-    expectedOutput_(std::move(expectedOutput)) {
+CapturedFdMsgEqHelper::CapturedFdMsgEqHelper(TestCaseContext &testCaseCtx,
+                                             pgutil::FdCapture::Fd capturedFd,
+                                             std::string expectedOutput,
+                                             const char *filename,
+                                             std::size_t lineno,
+                                             std::string failingMsg)
+    : testCaseCtx_(testCaseCtx), capture_(capturedFd), 
+      filename_(filename), lineno_(lineno), failingMsg_(failingMsg),
+      expectedOutput_(std::move(expectedOutput)) {
     auto ok = capture_.begin();
     PGZXB_DEBUG_ASSERT(ok);
 }
 
-CapturedFdMsgEqHelper::~CapturedFdMsgEqHelper() throw(TestRunFailed) {
+CapturedFdMsgEqHelper::~CapturedFdMsgEqHelper() {
     using FC = pgutil::FdCapture;
 
-    const char * fdName = nullptr;
+    const char *fdName = nullptr;
     if (capture_.getCapturedFd() == FC::kStdoutFd) fdName = "stdout";
     else if (capture_.getCapturedFd() == FC::kStderrFd) fdName = "stderr";
     PGZXB_DEBUG_ASSERT(fdName != nullptr);
@@ -27,13 +30,15 @@ CapturedFdMsgEqHelper::~CapturedFdMsgEqHelper() throw(TestRunFailed) {
     auto ok = capture_.end(capturedOutputMsg);
     PGZXB_DEBUG_ASSERT(ok);
     if (capturedOutputMsg != expectedOutput_) {
-        std::string msg = pghfmt::format(
-            "Expect {0} \"{1}\" but not({2}:{3}", fdName, expectedOutput_, filename_, lineno_);
+        std::string msg =
+            pghfmt::format("Expect {0} \"{1}\" but not({2}:{3}", fdName,
+                        expectedOutput_, filename_, lineno_);
         std::string hint = pghfmt::format(
-            "Hint: Captured {0} is \"{1}\"{2}", fdName, capturedOutputMsg, !failingMsg_.empty() ? (", " + failingMsg_) : failingMsg_);
+            "Hint: Captured {0} is \"{1}\"{2}", fdName, capturedOutputMsg,
+            !failingMsg_.empty() ? (", " + failingMsg_) : failingMsg_);
         std::cerr << msg << '\n';
         std::cerr << hint << '\n';
-        throw TestRunFailed{};
+        testCaseCtx_.incFailCount();
     }
 }
 

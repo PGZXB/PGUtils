@@ -184,6 +184,4 @@ PGTEST_CASE(pgstatus) {
         PGTEST_EQ(status.invoke(&ok), "");
         PGTEST_EXPECT(!ok);
     }
-
-    return true;
 }

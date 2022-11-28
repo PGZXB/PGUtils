@@ -211,8 +211,6 @@ PGTEST_CASE(pgrefl_utils) {
         PGTEST_EXPECT(!ref0move.strongEquals(ref3));
         PGTEST_EXPECT(!(ref0move == ref3));
     }
-
-    return true;
 }
 
 PGTEST_CASE(pgrefl_TypeMetaInfo) {
@@ -318,6 +316,4 @@ PGTEST_CASE(pgrefl_TypeMetaInfo) {
         PGTEST_EQ(get<int>(types, vec2fID, wrapAsObject(vec2), "x"), 1024);
         PGTEST_EQ(get<int>(types, vec2fID, wrapAsObject(vec2), "y"), 2048);
     }
-
-    return true;
 }
