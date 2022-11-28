@@ -122,4 +122,6 @@ PGTEST_CASE(test_Status) {
     status = 0;
     PGTEST_EXPECT(status.is_ok());
     PGTEST_EXPECT(status.get_code() == Status::kOk);
+
+    return true;
 }
