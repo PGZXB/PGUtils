@@ -228,6 +228,8 @@ private:
 
 class FdCapture {
 public:
+    enum Fd { kNone = -1, kStdoutFd = 1, kStderrFd = 2 };
+
     explicit FdCapture(int fd) : capturedFd_(fd) {
     }
 
@@ -271,6 +273,10 @@ public:
 
         return true;
     }
+
+    Fd getCapturedFd() const {
+        return (Fd)capturedFd_;
+    }
 private:
     int copyFd_{-1};
     int capturedFd_{-1};
@@ -279,13 +285,13 @@ private:
 
 class StdoutCapture : public FdCapture {
 public:
-    StdoutCapture() : FdCapture(1) {
+    StdoutCapture() : FdCapture(FdCapture::kStdoutFd) {
     }
 };
 
 class StderrCapture : public FdCapture {
 public:
-    StderrCapture() : FdCapture(2) {
+    StderrCapture() : FdCapture(FdCapture::kStderrFd) {
     }
 };
 
@@ -296,6 +302,7 @@ namespace pgutil {
 
 using pgimpl::util::ParseCmdConfig;
 using pgimpl::util::RaiiCleanup;
+using pgimpl::util::FdCapture;
 using pgimpl::util::StdoutCapture;
 using pgimpl::util::StderrCapture;
 using pgimpl::util::AllwaysTrue;
