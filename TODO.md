@@ -5,7 +5,7 @@
 - [ ] Support overriding `transToString`
 
 ## pgtest
-- [ ] Capture stdout and stderr
+- [x] Capture stdout and stderr
 - [ ] Catch exception thrown in test body
 - [ ] Support running tests selected by name
 - [ ] Support running tests parallelly
