@@ -17,6 +17,8 @@
 #include <intrin.h>
 #endif
 
+#include "pgfwd.h"
+
 namespace pgimpl {
 namespace util {
 
@@ -263,7 +265,7 @@ public:
             buffer.resize(len, '\0');
             // Read bytes to buffer
             f.read(const_cast<char*>(buffer.data()), len);
-            assert(f.tellg() == len);
+            PGZXB_DEBUG_ASSERT(f.tellg() == len);
         }
         outMsg = std::move(buffer);
         std::remove(tmpFile_.c_str());
@@ -295,6 +297,45 @@ public:
     }
 };
 
+template <typename T>
+class ObserverPtr {
+public:
+    ObserverPtr() = default;
+    ObserverPtr(std::nullptr_t) { }
+    ObserverPtr(T * ptr) : raw_ptr_(ptr) { }
+
+    explicit operator bool() const {
+        return !is_null();
+    }
+    
+    T * operator-> () const {
+        assert_raw_ptr_is_not_null();
+        return raw_ptr_;
+    }
+
+    T & operator* () const {
+        assert_raw_ptr_is_not_null();
+        return *raw_ptr_;
+    }
+
+    T * get() const {
+        assert_raw_ptr_is_not_null();
+        return raw_ptr_;
+    }
+
+    bool is_null() const {
+        return raw_ptr_ != nullptr;
+    }
+private:
+    void assert_raw_ptr_is_not_null() const {
+        PGZXB_DEBUG_ASSERT(raw_ptr_ != nullptr);
+    }
+
+    T *raw_ptr_{nullptr};
+};
+
+// TODO: Add friend functions for ObserverPtr (std::hash, operators(==, <, <=, ...))
+
 }  // namespace util
 }  // namespace pgimpl
 
@@ -306,6 +347,7 @@ using pgimpl::util::FdCapture;
 using pgimpl::util::StdoutCapture;
 using pgimpl::util::StderrCapture;
 using pgimpl::util::AllwaysTrue;
+using pgimpl::util::ObserverPtr;
 
 using pgimpl::util::cStrToU32;
 using pgimpl::util::cStrToU64;
