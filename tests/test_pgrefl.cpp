@@ -353,8 +353,6 @@ PGTEST_CASE(pgrefl_ClassBuilder_errorReporting) {
     builder.memSize(64);
     PGTEST_EQ(builder.commit(&clsMgr), true);
     PGTEST_EXPECT(clsMgr.tryGetClass(kTmpID) != nullptr);
-
-    return true;
 }
 
 PGTEST_CASE(pgrefl_ClassBuilder_basicUsage) {
@@ -418,6 +416,4 @@ PGTEST_CASE(pgrefl_ClassBuilder_basicUsage) {
 
     print(&p);
     // PGTEST_EQ(info, "{y=20202020 x=10241024}"); // depend on: std::unordered_map & std::hash
-
-    return true;
 }
