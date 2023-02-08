@@ -134,3 +134,80 @@ PGTEST_CASE(pgutil_parseCmdSimply) {
     PGTEST_EQ(z, 100);
     PGTEST_EQ(ext, std::vector<const char *>{argvBuf[2]});
 }
+
+PGTEST_CASE(pgutil_ObjectPool) {
+    struct T {
+        bool &constructed;
+        bool &destroyed;
+
+        int i = 0;
+        char ch[513];
+        int p, *pp;
+        std::string s;
+        std::vector<int> v;
+
+        T(bool &c, bool &d) : constructed(c), destroyed(d) {
+            constructed = true;
+            destroyed = false;
+        }
+
+        ~T() {
+            constructed = false;
+            destroyed = true;
+        }
+    };
+
+
+    bool c[100] = { 0 };
+    bool d[100] = { 0 };
+
+
+    {
+        using Pool = ObjectPool<T>;
+        Pool pool;
+
+        for (int i = 0; i < 100; ++i) {
+            pool.createObject(c[i], d[i])->i = i;
+        }
+
+        for (int i = 0; i< 100; ++i) {
+            PGTEST_EQ(pool.id(), Pool::getPoolID(pool[i]));
+            PGTEST_EQ((std::size_t)i, Pool::getIndexInPool(pool[i]));
+            union {
+                struct { std::uint64_t poolID: 16; std::uint64_t indexInPool: 48; };
+                std::uint64_t uid;
+            } u;
+            u.poolID = Pool::getPoolID(pool[i]);
+            u.indexInPool = Pool::getIndexInPool(pool[i]);
+            PGTEST_EQ(u.uid, Pool::getUID(pool[i]));
+            PGTEST_EQ(pool[i]->i, i);
+            PGTEST_EXPECT(c[i]);
+            PGTEST_EXPECT(!d[i]);
+        }
+
+        for (int i = 0; i < 100; i += 2) {
+            pool.destroyObject(pool[i]);
+        }
+
+        for (int i = 0; i < 100; ++i) {
+            if (i % 2 == 0) {
+                PGTEST_EXPECT(!c[i]);
+                PGTEST_EXPECT(d[i]);
+            } else {
+                PGTEST_EXPECT(c[i]);
+                PGTEST_EXPECT(!d[i]);
+            }
+        }
+
+        for (int i = 0; i < 100; ++i) {
+            if (i % 2 != 0) { // not-destroyed objects
+                auto pI = pool[i];
+                PGTEST_EQ(pI.get(), pool[Pool::getIndexInPool(pI)].get());
+            }
+        }
+    } // pool destroyed
+    for (int i = 0; i < 100; ++i) {
+        PGTEST_EXPECT(!c[i]);
+        PGTEST_EXPECT(d[i]);
+    }
+}

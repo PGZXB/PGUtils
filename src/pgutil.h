@@ -8,9 +8,11 @@
 #include <cstdint>
 #include <limits>
 #include <vector>
+#include <deque>
 #include <utility>
 #include <fstream>
 #include <functional>
+#include <atomic>
 #include <unistd.h> // FIXME: Adapt Windows
 
 #ifdef _MSC_VER
@@ -305,29 +307,29 @@ public:
     ObserverPtr(T * ptr) : raw_ptr_(ptr) { }
 
     explicit operator bool() const {
-        return !is_null();
+        return !isNull();
     }
     
     T * operator-> () const {
-        assert_raw_ptr_is_not_null();
+        assertRawPtrIsNotNull();
         return raw_ptr_;
     }
 
     T & operator* () const {
-        assert_raw_ptr_is_not_null();
+        assertRawPtrIsNotNull();
         return *raw_ptr_;
     }
 
     T * get() const {
-        assert_raw_ptr_is_not_null();
+        assertRawPtrIsNotNull();
         return raw_ptr_;
     }
 
-    bool is_null() const {
+    bool isNull() const {
         return raw_ptr_ != nullptr;
     }
 private:
-    void assert_raw_ptr_is_not_null() const {
+    void assertRawPtrIsNotNull() const {
         PGZXB_DEBUG_ASSERT(raw_ptr_ != nullptr);
     }
 
@@ -335,6 +337,117 @@ private:
 };
 
 // TODO: Add friend functions for ObserverPtr (std::hash, operators(==, <, <=, ...))
+
+template <typename T>
+class ObjectPool {
+    struct Box {
+        using DataStorage = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
+
+        union {
+            struct {
+                std::uint64_t poolID: 16;
+                std::uint64_t indexInPool: 48;
+            };
+            std::uint64_t uid;
+        };
+        DataStorage storage;
+
+        Box() : poolID(0), indexInPool(0) { }
+
+        ObserverPtr<T> cast() {
+            return reinterpret_cast<T*>(&storage);
+        }
+
+        ObserverPtr<const T> cast() const {
+            return reinterpret_cast<const T *>(&storage);
+        }
+
+        template <typename ...Args>
+        ObserverPtr<T> emplace(Args && ...args) {
+            return ( new (&storage) T{std::forward<Args>(args)...} );
+        }
+
+        void destroy() {
+            reinterpret_cast<T*>(&storage)->~T();
+        }
+    };
+    static constexpr std::size_t kOffsetOfDataInBox = offsetof(Box, storage);
+public:
+    ObjectPool() : id_(getNextID()) { }
+
+    ~ObjectPool() {
+        constexpr auto _64Ones = std::numeric_limits<std::uint64_t>::max();
+        for (auto &b : freeList_) {
+            PGZXB_DEBUG_ASSERT(b->uid != _64Ones);
+            b->uid = _64Ones;
+        }
+        for (auto &b : pool_) {
+            if (b.uid != _64Ones) {
+                b.destroy();
+            }
+        }
+    }
+
+    std::uint16_t id() const { return id_; }
+
+    template <typename ...Args>
+    ObserverPtr<T> createObject(Args && ...args) {
+        ObserverPtr<Box> pBox = nullptr;
+        if (!freeList_.empty()) {
+            pBox = freeList_.back();
+            freeList_.pop_back();
+        } else {
+            pool_.push_back(Box());
+            pBox = &pool_.back();
+            pBox->poolID = id_;
+            pBox->indexInPool = pool_.size() - 1;
+        }
+        return pBox->emplace(std::forward<Args>(args)...);
+    }
+
+    void destroyObject(ObserverPtr<T> pT) {
+        Box *pBox = (Box*)((unsigned char *)(pT.get()) - kOffsetOfDataInBox);
+        PGZXB_DEBUG_ASSERT(pBox->poolID == id_);
+        PGZXB_DEBUG_ASSERT(pBox->indexInPool <= pool_.size());
+        pBox->destroy();
+        freeList_.emplace_back(pBox);
+    }
+
+    ObserverPtr<T> operator[] (std::size_t index) {
+        PGZXB_DEBUG_ASSERT(index < pool_.size());
+        return pool_[index].cast();
+    }
+
+    ObserverPtr<const T> operator[] (std::size_t index) const {
+        PGZXB_DEBUG_ASSERT(index < pool_.size());
+        return pool_[index].cast();
+    }
+
+    static std::uint16_t getPoolID(ObserverPtr<T> pT) {
+        Box *pBox = (Box*)((unsigned char *)(pT.get()) - kOffsetOfDataInBox);
+        return pBox->poolID;
+    }
+
+    static std::uint64_t getIndexInPool(ObserverPtr<T> pT) {
+        Box *pBox = (Box*)((unsigned char *)(pT.get()) - kOffsetOfDataInBox);
+        return pBox->indexInPool;
+    }
+
+    static std::uint64_t getUID(ObserverPtr<T> pT) {
+        Box *pBox = (Box*)((unsigned char *)(pT.get()) - kOffsetOfDataInBox);
+        return pBox->uid;
+    }
+private:
+    static std::uint16_t getNextID() {
+        static std::atomic_uint16_t idCounter{0};
+        PGZXB_DEBUG_ASSERT(idCounter != 0xffff);
+        return idCounter++;
+    }
+
+    std::uint16_t id_{0};
+    std::deque<Box> pool_;
+    std::vector<ObserverPtr<Box>> freeList_;
+};
 
 }  // namespace util
 }  // namespace pgimpl
@@ -348,6 +461,7 @@ using pgimpl::util::StdoutCapture;
 using pgimpl::util::StderrCapture;
 using pgimpl::util::AllwaysTrue;
 using pgimpl::util::ObserverPtr;
+using pgimpl::util::ObjectPool;
 
 using pgimpl::util::cStrToU32;
 using pgimpl::util::cStrToU64;
