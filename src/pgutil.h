@@ -326,7 +326,7 @@ public:
     }
 
     bool isNull() const {
-        return raw_ptr_ != nullptr;
+        return raw_ptr_ == nullptr;
     }
 private:
     void assertRawPtrIsNotNull() const {
