@@ -20,7 +20,9 @@
     if (!(cond)) { \
         std::cerr << "Expect "#cond" but not(" << file << ":" << line << '\n'; \
         if (failingMsg) std::cerr << "Hint: " << failingMsg << '\n'; \
-        __pgtest_testCaseContext.incFailCount(); \
+        __pgtest_testCaseContext.incFailedCount(); \
+    } else { \
+        __pgtest_testCaseContext.incPassedCount(); \
     } PGZXB_PASS
 
 #define PGTEST_EXPECT_EX(cond, failingMsg) PGTEST_EXPECT_EX_IMPL(cond, failingMsg, __FILE__, __LINE__)

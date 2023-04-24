@@ -10,10 +10,14 @@ namespace test {
 // contexts
 class TestCaseContext {
 public:
-    bool failed() const { return failCount_ > 0; }
-    void incFailCount() { ++failCount_; }
+    unsigned failedCount() const { return failedCount_; }
+    unsigned passedCount() const { return passedCount_; }
+    bool failed() const { return failedCount() > 0; }
+    void incFailedCount() { ++failedCount_; }
+    void incPassedCount() { ++passedCount_; }
 private:
-    unsigned failCount_{0};
+    unsigned failedCount_{0};
+    unsigned passedCount_{0};
 };
 
 } // namespace test

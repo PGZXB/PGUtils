@@ -38,7 +38,9 @@ CapturedFdMsgEqHelper::~CapturedFdMsgEqHelper() {
             !failingMsg_.empty() ? (", " + failingMsg_) : failingMsg_);
         std::cerr << msg << '\n';
         std::cerr << hint << '\n';
-        testCaseCtx_.incFailCount();
+        testCaseCtx_.incFailedCount();
+    } else {
+        testCaseCtx_.incPassedCount();
     }
 }
 

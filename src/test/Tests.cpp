@@ -44,7 +44,15 @@ std::pair<int, int> Tests::runAllTests() const {
         if (passed) ++okCnt;
         e.second.lastRunOk = passed;
         // FIXME: Cross platform: print colorful text
-        std::cerr << std::setw(width) << cnt++ << '/' << strTotal << (passed ? "\033[32m[OK]\033[0m" : "\033[31m[NO]\033[0m") << ' ' << name << '\n';
+        const auto colorStart = passed ? "\033[32m" : "\033[31m";
+        const auto colorEnd = "\033[0m";
+        std::cerr
+            << std::setw(width) << cnt++ << '/' << strTotal
+            << colorStart
+            << (passed ? "[OK]" : "[NO]")
+            << '(' << ctx.passedCount() << '/' << (ctx.passedCount() + ctx.failedCount()) << ')' << ' '
+            << colorEnd
+            << name << '\n';
     }
 
     return std::make_pair(okCnt, total);
