@@ -24,18 +24,28 @@ TestFunction Tests::getTest(const std::string &name) const {
 std::vector<Tests::TestInfo*> Tests::getFailedTests() const {
     std::vector<TestInfo*> res;
     for (auto &e: tests_) {
-        if (!e.second.lastRunOk)
+        if (e.second.ran && !e.second.lastRunOk)
             res.push_back(&e.second);
     }
     return res;
 }
 
-std::pair<int, int> Tests::runAllTests() const {
-    int okCnt = 0, cnt = 1, total = tests_.size();
+std::pair<int, int> Tests::runAllTests(std::function<bool(const TestInfo&)> filter) const {
+    if (!filter) filter = [](const TestInfo&) { return true; };
+    int okCnt = 0, cnt = 1, total = 0;
+
+    std::vector<std::pair<std::string, TestInfo&>> filteredTests;
+    for (auto &e: tests_) {
+        if (filter(e.second)) {
+            filteredTests.emplace_back(e.first, e.second);
+            ++total;
+        }
+    }
+    
     auto strTotal = std::to_string(total);
     int width = (int)strTotal.size();
 
-    for (auto &e: tests_) {
+    for (auto &e: filteredTests) {
         const auto &name = e.first;
         auto &tsetCaseFunc = e.second.testFunc;
         TestCaseContext ctx;
@@ -43,6 +53,7 @@ std::pair<int, int> Tests::runAllTests() const {
         bool passed = !ctx.failed();
         if (passed) ++okCnt;
         e.second.lastRunOk = passed;
+        e.second.ran = true;
         // FIXME: Cross platform: print colorful text
         const auto colorStart = passed ? "\033[32m" : "\033[31m";
         const auto colorEnd = "\033[0m";

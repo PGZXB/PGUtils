@@ -18,6 +18,7 @@ public:
         const char * name{nullptr};
         TestFunction testFunc{nullptr};
         std::string fileLine{};
+        bool ran{false};
         bool lastRunOk{false};
 
         TestInfo() = default;
@@ -28,7 +29,7 @@ public:
     void addTest(const std::string &name, const TestFunction &func, const std::string &fileLine);
     TestFunction getTest(const std::string &name) const;
     std::vector<TestInfo*> getFailedTests() const;
-    std::pair<int, int> runAllTests() const;
+    std::pair<int, int> runAllTests(std::function<bool(const TestInfo&)> filter = nullptr) const;
 
     static Tests *getDefaultInstance();
 private:
