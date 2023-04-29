@@ -46,5 +46,6 @@ int main (int argc, char **argv) {
             std::cerr << "  " << t->name << '(' << t->fileLine << "),\n";
         }
         std::cerr << "}\033[0m\n";
+        return -(p.second - p.first); // Return the number of failed tests
     }
 }
