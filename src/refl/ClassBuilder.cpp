@@ -65,7 +65,7 @@ static std::string debuggingProcErrOfClassBuilder(pgstatus::Status & s) {
 }
 
 static pgstatus::ErrorManager * getErrorManagerOfClassBuilder() {
-    static status::ErrorManager mgr;
+    static status::ErrorManager & mgr = status::ErrorManager::getOrMakeErrorManager("ErrorManager[pgrefl::ClassBuilder]");
     for (unsigned i = (unsigned)Err::kMinErroEnumVal; i < (unsigned)Err::kMaxErrorEnumVal; ++i) {
         auto ok = mgr.tryRegisterError(i, "", debuggingProcErrOfClassBuilder);
         PGZXB_DEBUG_ASSERT(ok);

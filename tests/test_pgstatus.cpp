@@ -83,7 +83,7 @@ PGTEST_CASE(pgstatus) {
     PGTEST_EQ(status.code(), Status::kOk);
 
     // Test for Status with ErrorManager
-    ErrorManager mgr;
+    ErrorManager &mgr = ErrorManager::getGlobalErrorManager();
     PGTEST_EQ(true, mgr.tryRegisterError(E(kErrNotFound), "[Error]Not found", process_err));
     PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInvalidKey), "[Error]Invalid key", process_err));
     PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInsertRepeatly), "[Error]Insert a key repeatly", process_err));

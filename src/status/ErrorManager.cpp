@@ -1,9 +1,31 @@
 #include "ErrorManager.h"
 
+#include "Status.h"
+
+using pgimpl::status::Status;
 using pgimpl::status::ErrorManager;
 using pgimpl::status::ErrorInfo;
 using pgimpl::status::ErrorCallback;
 using pgimpl::status::RaiiTmpErrorInfoUpdater;
+
+ErrorManager::ErrorManager(const ErrorManager &other)
+    : name_(other.name_),
+      globalStatus_(new Status(*other.globalStatus_)),
+      managedErrorInfo_(other.managedErrorInfo_) {
+}
+
+ErrorManager::ErrorManager(ErrorManager &&other) = default;
+
+ErrorManager & ErrorManager::operator=(const ErrorManager &other) {
+    name_ = other.name_;
+    globalStatus_.reset(new Status(*other.globalStatus_));
+    managedErrorInfo_ = other.managedErrorInfo_;
+    return *this;
+}
+
+ErrorManager & ErrorManager::operator=(ErrorManager &&other) = default;
+
+ErrorManager::~ErrorManager() = default;
 
 bool ErrorManager::tryRegisterError(
   std::uint64_t code,
@@ -63,6 +85,12 @@ const ErrorInfo * ErrorManager::tryGetErrorInfo(std::uint64_t code) const {
     return const_cast<ErrorManager * const>(this)->tryGetErrorInfoImpl(code);
 }
 
+Status & ErrorManager::globalStatus() {
+    PGZXB_DEBUG_ASSERT(globalStatus_);
+    return *globalStatus_;
+}
+
+
 // static members & functions
 std::deque<ErrorManager> ErrorManager::errorManagerMap;
 
@@ -77,8 +105,7 @@ ErrorManager * ErrorManager::tryGetErrorManager(const std::string & name) {
 
 ErrorManager & ErrorManager::getOrMakeErrorManager(const std::string & name) {
     if (auto *mgr = tryGetErrorManager(name)) return *mgr;
-    ErrorManager mgr;
-    mgr.name_ = name;
+    ErrorManager mgr{name};
     errorManagerMap.push_back(std::move(mgr));
     return errorManagerMap.back();
 }
@@ -99,6 +126,10 @@ ErrorManager & ErrorManager::getGlobalErrorManager() {
 }
 
 // private member functions
+ErrorManager::ErrorManager(std::string name) : name_(std::move(name)), globalStatus_(new Status(this)) {
+
+}
+
 ErrorInfo * ErrorManager::tryGetErrorInfoImpl(std::uint64_t code) {
     auto &infos = managedErrorInfo_;
     if (code < infos.size() && infos[code].code != ErrorInfo::kInvalidCode) {
