@@ -4,6 +4,7 @@
 #include <deque>
 #include <string>
 #include <limits>
+#include <memory>
 #include <functional>
 
 #include "../pgfwd.h"
