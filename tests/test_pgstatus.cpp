@@ -82,7 +82,17 @@ PGTEST_CASE(pgstatus) {
     PGTEST_EXPECT(status.isOk());
     PGTEST_EQ(status.code(), Status::kOk);
 
+    status.onlySetCode(E(kErrNotFound));
+    status.setWrappedStatus(status, kErrInsertRepeatly);
+    status.makeContext<std::string>("KEY0");
+    status.setWrappedStatus(status, kErrInvalidKey);
+    status.makeContext<std::string>("KEY1");
+    status.setWrappedStatus(status, kErrNotFound);
+    PGTEST_EQ(status.code(), E(kErrNotFound));
+    PGTEST_EQ(status.invoke(), "Not Found{Invalid key: KEY1{Insert KEY0 repeatly{Not Found}}}");
+
     // Test for Status with ErrorManager
+    status = Status{};
     ErrorManager &mgr = ErrorManager::getGlobalErrorManager();
     PGTEST_EQ(true, mgr.tryRegisterError(E(kErrNotFound), "[Error]Not found", process_err));
     PGTEST_EQ(true, mgr.tryRegisterError(E(kErrInvalidKey), "[Error]Invalid key", process_err));

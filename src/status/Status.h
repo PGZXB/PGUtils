@@ -20,10 +20,6 @@ private:
     static constexpr std::uint64_t kNotUseInternalData  = 0;
     static constexpr std::uint64_t kUseInternalMgr      = 1;
     static constexpr std::uint64_t kUseInternalCallback = 2;
-    // flags for context_
-    static constexpr std::uint64_t kNoContext           = 0;
-    static constexpr std::uint64_t kUsePlacedContext    = 1;
-    static constexpr std::uint64_t kUseMallocContext    = 2;
 public:
     using StatusInternalErrCallback = std::string(Status&);
     static constexpr std::uint64_t kOk                 = 0;
@@ -36,12 +32,11 @@ public:
     Status();
     explicit Status(ErrorManager *mgr);
     explicit Status(StatusInternalErrCallback *callback);
-    ~Status();
 
-    Status(const Status &) = default;
+    Status(const Status &);
     Status(Status &&) = default;
 
-    Status &operator=(const Status &) = default;
+    Status &operator=(const Status &);
     Status &operator=(Status &&) = default;
 
     Status &operator=(std::uint64_t code) {
@@ -89,11 +84,9 @@ public:
 
     template <typename T, typename ...Args>
     T& makeContext(Args &&...args) {
-        T * ptr = new (newContext(sizeof(T))) T{std::forward<Args>(args)...};
-        return *ptr;
+        context_ = std::make_shared<T>(std::forward<Args>(args)...);
+        return *static_cast<T*>(context_.get());
     }
-
-    void clearContext();
 
     template <typename T>
     const T &getContext(bool * ok = nullptr) const {
@@ -102,17 +95,16 @@ public:
 
     template <typename T>
     T &getContext(bool * ok = nullptr) {
-        if (ok) *ok = contextFlags_ != kNoContext;
-        return contextFlags_ == kUseMallocContext ?
-            *(T*)context_.ptr :
-            *(T*)&context_.mem;
+        if (ok) *ok = context_ != nullptr;
+        return *static_cast<T*>(getRawContext());
     }
 
     void * getRawContext() const {
-        if (contextFlags_ == kUsePlacedContext) return (void*)&context_.mem;
-        if (contextFlags_ == kUseMallocContext) return context_.ptr;
-        PGZXB_DEBUG_ASSERT(contextFlags_ == kNoContext);
-        return nullptr;
+        return context_.get();
+    }
+
+    void clearContext() {
+        context_.reset();
     }
 
     std::uint64_t code() const {
@@ -122,20 +114,23 @@ public:
     ErrorManager *getMgr() const {
         return internalDataFlags_ == kUseInternalMgr ? internal_.mgr : nullptr;
     }
-private:
-    void * newContext(std::size_t sizeInBytes);
 
-    std::uint64_t contextFlags_: 4;
-    std::uint64_t internalDataFlags_: 4;
+    void setWrappedStatus(Status wrappedStatus, std::uint64_t code) {
+        if (!wrappedStatus.isOk()) {
+            wrappedStatus_ = std::unique_ptr<Status>(new Status{std::move(wrappedStatus)});
+            code_ = code;
+        }
+    }
+
+private:
+    std::uint64_t internalDataFlags_: 8;
     std::uint64_t code_: kCodeBits;
     union {
         ErrorManager *mgr;
         StatusInternalErrCallback *callback;
     } internal_;
-    union {
-        void *ptr;
-        std::uintptr_t mem;
-    } context_;
+    std::shared_ptr<void> context_{nullptr};
+    std::unique_ptr<Status> wrappedStatus_{nullptr};
 };
 
 }  // namespace status
