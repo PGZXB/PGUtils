@@ -2,6 +2,7 @@
 #define PGZXB_STATUS_H
 
 #include <limits>
+#include <memory>
 #include "../pgfwd.h"
 
 namespace pgimpl {
