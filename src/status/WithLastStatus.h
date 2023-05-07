@@ -96,12 +96,17 @@ protected:
     }
 
     template <typename ErrorT, typename StatusContextT>
-    void setLastStatus(ErrorT error, const StatusContextT &context) {
+    void setLastStatus(ErrorT error, StatusContextT context, const Status *wrapped = nullptr) {
         PGZXB_DEBUG_ASSERT(lastStatus_.getRawContext() != nullptr);
-        lastStatus_.getContext<typename Class::StatusContext>() = context;
-        auto msg = lastStatus_.setCodeAndInvoke((std::uint64_t)error);
-        if (Class::kPrintWarnings && !lastStatus_.isOk()) { // FIXME: use if constexpr (C++17) + if
-            std::cerr << "\033[33mWARN[pguilite::Qt6ClassBuilder] " << msg << "\033[0m" << std::endl;
+        lastStatus_.getContext<typename Class::StatusContext>() = std::move(context);
+        if (wrapped) {
+            lastStatus_.setWrappedStatus(*wrapped, (std::uint64_t)error);
+        } else {
+            lastStatus_.onlySetCode((std::uint64_t)error);
+        }
+        if (Class::kPrintWarnings && !lastStatus_.isOk()) {  // FIXME: use if constexpr (C++17) + if
+            auto msg = lastStatus_.invoke();
+            std::cerr << "\033[33mWARN["<< Class::kErrorManagerName << "] " << msg << "\033[0m" << std::endl;
         }
     }
 
