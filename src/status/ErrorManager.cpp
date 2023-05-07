@@ -125,6 +125,14 @@ ErrorManager & ErrorManager::getGlobalErrorManager() {
     return *global_mgr;
 }
 
+ErrorManager &ErrorManager::makeErrorManagerAndRegisterErrorInfos(const char * name, const ErrorInfo * errorInfos, const std::size_t errorInfosSize) {
+    auto &mgr = ErrorManager::getOrMakeErrorManager(name);
+    for (std::size_t i = 0; i < errorInfosSize; ++i) {
+        mgr.tryRegisterError(errorInfos[i].code, errorInfos[i].msg, errorInfos[i].callback);
+    }
+    return mgr;
+}
+
 // private member functions
 ErrorManager::ErrorManager(std::string name) : name_(std::move(name)), globalStatus_(new Status(this)) {
 

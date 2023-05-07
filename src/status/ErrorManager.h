@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "../pgfwd.h"
+#include "ErrorInfo.h"
 
 namespace pgimpl {
 namespace status {
@@ -16,14 +17,6 @@ constexpr char kGlobalErrorManagerName[] = "PGUtils :: Global Error Manager";
 
 class Status;
 class ErrorManager;
-using ErrorCallback = std::function<std::string(Status&)>;
-
-struct ErrorInfo {
-    static constexpr std::uint64_t kInvalidCode = std::numeric_limits<std::uint64_t>::max();
-    std::uint64_t code{kInvalidCode};
-    std::string msg /* {""} */;
-    ErrorCallback callback /* {nullptr} */;
-};
 
 class RaiiTmpErrorInfoUpdater {
     friend class ErrorManager;
@@ -90,6 +83,10 @@ public:
     static ErrorManager & getOrMakeErrorManager(const std::string & name);
     static bool tryRemoveErrorManager(const std::string & name);
     static ErrorManager & getGlobalErrorManager();
+
+    static ErrorManager &makeErrorManagerAndRegisterErrorInfos(const char * name,
+                                                               const ErrorInfo * errorInfos,
+                                                               const std::size_t errorInfosSize);
 private:
     ErrorManager(std::string name);
     ErrorInfo * tryGetErrorInfoImpl(std::uint64_t code);

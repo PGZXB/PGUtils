@@ -449,6 +449,12 @@ private:
     std::vector<ObserverPtr<Box>> freeList_;
 };
 
+
+template <typename T, std::size_t N>
+constexpr std::size_t cArraySize(T (&)[N]) {
+    return N;
+}
+
 }  // namespace util
 }  // namespace pgimpl
 
@@ -471,6 +477,7 @@ using pgimpl::util::ctz;
 using pgimpl::util::popcnt;
 using pgimpl::util::visitParamPackage;
 using pgimpl::util::parseCmdSimply;
+using pgimpl::util::cArraySize;
 
 }  // namespace pgutil
 
