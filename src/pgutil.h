@@ -13,7 +13,10 @@
 #include <fstream>
 #include <functional>
 #include <atomic>
+
+#ifndef _WIN32
 #include <unistd.h> // FIXME: Adapt Windows
+#endif
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -238,6 +241,7 @@ public:
     }
 
     bool begin() {
+#ifndef _WIN32
         // FIXME: Adapt Windows
         copyFd_ = ::dup(capturedFd_);
         tmpFile_ = "/tmp/pgtest_cap_XXXXXX";
@@ -247,9 +251,12 @@ public:
         ::dup2(capFd, capturedFd_);
         ::close(capFd);
         return true;
+#endif
+        return true;
     }
 
     bool end(std::string &outMsg) {
+#ifndef _WIN32
         if (copyFd_ == -1) return false;
         // Un-capture
         ::fflush(nullptr);
@@ -275,6 +282,8 @@ public:
         // reset internal data
         copyFd_ = -1;
 
+        return true;
+#endif
         return true;
     }
 
@@ -468,7 +477,6 @@ using pgimpl::util::StderrCapture;
 using pgimpl::util::AllwaysTrue;
 using pgimpl::util::ObserverPtr;
 using pgimpl::util::ObjectPool;
-
 using pgimpl::util::cStrToU32;
 using pgimpl::util::cStrToU64;
 using pgimpl::util::ceilDivide;

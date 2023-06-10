@@ -1,5 +1,6 @@
 #include "test/pgtest.h" // Using PGTEST_*
 
+#ifndef _WIN32
 PGTEST_CASE(pgtest_captureStdoutAndStderr) {
     PGTEST_STDOUT_EQ("std::cout << ABC;printf(ABC);") {
         std::cout << "std::cout << ABC;";
@@ -18,3 +19,4 @@ PGTEST_CASE(pgtest_captureStdoutAndStderr) {
         }
     }
 }
+#endif
