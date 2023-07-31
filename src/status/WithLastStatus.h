@@ -1,6 +1,7 @@
 #ifndef PGUTILS_STATUS_WITHLASTSTATUS_H
 #define PGUTILS_STATUS_WITHLASTSTATUS_H
 
+#include <iostream>
 #include "../pgutil.h"
 #include "Status.h"
 #include "ErrorInfo.h"
