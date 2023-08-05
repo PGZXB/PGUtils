@@ -44,6 +44,13 @@
         pgimpl::test::CapturedFdMsgEqHelper{__pgtest_testCaseContext, pgutil::FdCapture::Fd::kStderrFd, expected, __FILE__, __LINE__, failingMsg} \
     })
 #define PGTEST_STDERR_EQ(expected) PGTEST_STDERR_EQ_EX(expected, "")
+#define PGTEST_EXPECT_EXCEPTION_EX(Ex, msg, failingMsg)                                                         \
+  if (auto _temp =                                                                                              \
+          pgutil::AllwaysTrue<pgimpl::test::ExpectExceptionHelper<Ex>>{pgimpl::test::ExpectExceptionHelper<Ex>{ \
+              __pgtest_testCaseContext, #Ex, msg, __FILE__, __LINE__, failingMsg}})                             \
+      _temp.data = []()
+#define PGTEST_EXPECT_EXCEPTION(Ex, msg) PGTEST_EXPECT_EXCEPTION_EX(Ex, msg, "")
+
 
 namespace pgimpl {
 namespace test {
@@ -66,6 +73,60 @@ private:
     std::size_t lineno_{0};
     std::string failingMsg_;
     std::string expectedOutput_;
+};
+
+// for PGTEST_EXPECT_EXCEPTION
+template <typename ExpectedException>
+class ExpectExceptionHelper {
+  /*static_assert(std::is_same_v<std::invoke_result_t<&ExpectedException::what, ExpectedException *>, const char *>,
+                "what() to return exception msg is required by PGTEST_EXPECT_EXCEPTION");*/
+
+public:
+    ExpectExceptionHelper(TestCaseContext &testCaseCtx,
+                          std::string expectedExceptionName,
+                          std::string expectedMsgInfix,
+                          const char *filename,
+                          std::size_t lineno,
+                          std::string failingMsg)
+        : testCaseCtx_(testCaseCtx),
+          filename_(filename),
+          lineno_(lineno),
+          failingMsg_(std::move(failingMsg)),
+          expectedExceptionName_(std::move(expectedExceptionName)),
+          expectedMsgInfix_(std::move(expectedMsgInfix)) {
+    }
+
+    void operator=(std::function<void()> body) {
+        bool passed = false;
+        std::string msg, hint;
+        try {
+            body();
+          hint = "No exception thrown";
+        } catch (ExpectedException ex) {
+            const std::string exMsg = ex.what();
+            passed = (exMsg.find_first_of(expectedMsgInfix_) != std::string::npos);
+            hint = "Message not matched: '" + exMsg + "'";
+        } catch (...) {
+            hint = "Unexpected C++ exception";
+        }
+        if (!passed) {
+            msg = pghfmt::format("Expect exception \"{0}\" but not({1}:{2}", expectedExceptionName_, filename_, lineno_);
+            hint = "Hint: " + hint + (failingMsg_.empty() ? "" : ", " + failingMsg_);
+            std::cerr << msg << '\n';
+            std::cerr << hint << '\n';
+            testCaseCtx_.incFailedCount();
+        } else {
+            testCaseCtx_.incPassedCount();
+        }
+    }
+
+private:
+    TestCaseContext &testCaseCtx_;
+    const char *filename_{nullptr};
+    std::size_t lineno_{0};
+    std::string failingMsg_;
+    std::string expectedExceptionName_;
+    std::string expectedMsgInfix_;
 };
 
 class Tests;

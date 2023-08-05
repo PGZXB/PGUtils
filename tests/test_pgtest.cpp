@@ -20,3 +20,17 @@ PGTEST_CASE(pgtest_captureStdoutAndStderr) {
     }
 }
 #endif
+
+
+PGTEST_CASE(pgtest_exception) {
+    class TestException : public std::exception {
+        using Base = std::exception;
+
+     public:
+        using Base::Base;
+    };
+
+    PGTEST_EXPECT_EXCEPTION(const TestException &, "This is a exception hahaha!!") {
+        throw TestException("a exception hahaha!!");
+    };
+}
