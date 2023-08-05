@@ -48,7 +48,7 @@
   if (auto _temp =                                                                                              \
           pgutil::AllwaysTrue<pgimpl::test::ExpectExceptionHelper<Ex>>{pgimpl::test::ExpectExceptionHelper<Ex>{ \
               __pgtest_testCaseContext, #Ex, msg, __FILE__, __LINE__, failingMsg}})                             \
-      _temp.data = []()
+      _temp.data = [&]()
 #define PGTEST_EXPECT_EXCEPTION(Ex, msg) PGTEST_EXPECT_EXCEPTION_EX(Ex, msg, "")
 
 
