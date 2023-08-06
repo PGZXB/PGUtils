@@ -104,8 +104,8 @@ public:
           hint = "No exception thrown";
         } catch (ExpectedException ex) {
             const std::string exMsg = ex.what();
-            passed = (exMsg.find_first_of(expectedMsgInfix_) != std::string::npos);
-            hint = "Message not matched: '" + exMsg + "'";
+            passed = (exMsg.find(expectedMsgInfix_) != std::string::npos);
+            hint = "Message not matched: '" + exMsg + "' match='" + expectedMsgInfix_ + "'";
         } catch (...) {
             hint = "Unexpected C++ exception";
         }

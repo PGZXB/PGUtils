@@ -24,13 +24,17 @@ PGTEST_CASE(pgtest_captureStdoutAndStderr) {
 
 PGTEST_CASE(pgtest_exception) {
     class TestException : public std::exception {
-        using Base = std::exception;
-
      public:
-        using Base::Base;
+      const char *msg{nullptr};
+      TestException(const char *msg) : msg(msg) {
+      }
+
+      const char *what() const noexcept override {
+        return msg;
+      }
     };
 
-    PGTEST_EXPECT_EXCEPTION(const TestException &, "This is a exception hahaha!!") {
-        throw TestException("a exception hahaha!!");
+    PGTEST_EXPECT_EXCEPTION(const TestException &, "a exception hahaha!!") {
+        throw TestException("This is a exception hahaha!!");
     };
 }
